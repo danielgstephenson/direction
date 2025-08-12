@@ -11,7 +11,7 @@ export class Renderer {
   borderColor = 'hsl(0, 0%, 10%)'
   crownColor = 'hsl(50, 100%, 50%)'
   teamColors = [
-    'hsl(200, 100%, 50%)',
+    'hsl(210, 100%, 50%)',
     'hsl(120, 75%, 40%)'
   ]
 
@@ -23,8 +23,9 @@ export class Renderer {
     window.addEventListener('resize', () => this.onResize())
   }
 
-  setup (gridSize: number): void {
-    this.svgs.forEach(svg => {
+  setup (game: GameSummary): void {
+    this.svgs.forEach((svg, m) => {
+      const gridSize = game.gridSize
       const padding = 0.5
       svg.viewbox(`-${padding} -${padding} ${gridSize + 2 * padding} ${gridSize + 2 * padding}`)
       range(gridSize).forEach(x => {
@@ -35,6 +36,16 @@ export class Renderer {
           rect.center(xPos, yPos)
           rect.stroke({ color: this.borderColor, width: 0.07 })
         })
+      })
+      const units = game.units.filter(unit => unit.m === m)
+      console.log('units', units)
+      units.forEach(unit => {
+        const xPos = unit.x + 0.5
+        const yPos = unit.y + 0.5
+        const color = this.teamColors[unit.team]
+        const circle = svg.circle(0.9)
+        circle.center(xPos, yPos)
+        circle.fill(color)
       })
     })
   }

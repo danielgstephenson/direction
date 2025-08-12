@@ -6,3 +6,15 @@ export function range (a: number, b?: number): number[] {
 export function choose<T> (choices: T[]): T {
   return choices[Math.floor(Math.random() * choices.length)]
 }
+
+export interface Vec2 {
+  x: number
+  y: number
+}
+
+export function shuffle <T> (array: T[]): T[] {
+  return array
+    .map(item => ({ value: item, priority: Math.random() }))
+    .sort((a, b) => a.priority - b.priority)
+    .map(x => x.value)
+}

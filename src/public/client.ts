@@ -16,7 +16,7 @@ export class Client {
     })
     this.socket.on('setup', (game: GameSummary) => {
       console.log('setup')
-      this.renderer.setup(game.gridSize)
+      this.renderer.setup(game)
     })
     this.socket.on('step', (game: GameSummary) => {
       this.onStep(game)
