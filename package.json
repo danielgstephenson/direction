@@ -21,5 +21,11 @@
     "@types/node": "^24.2.1",
     "parcel": "^2.15.4",
     "ts-standard": "^12.0.2"
+  },
+  "ts-standard": {
+    "project": "src/tsconfig.json",
+    "ignore": [
+      "dist"
+    ]
   }
 }
