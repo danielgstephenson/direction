@@ -14,7 +14,7 @@ export class Game {
   countdown: number
   maxCountdown: number
   stepInterval = 0.5
-  gridSize = 8
+  gridSize = 6
 
   constructor () {
     this.setupIo()
@@ -61,13 +61,14 @@ export class Game {
     const offset = choose([0, 1])
     const locations = shuffle(this.locations)
     range(6).forEach(i => {
-      const m0 = (i + offset) % 2
-      const m1 = 1 - m0
+      const t0 = (i + offset) % 2
+      const t1 = 1 - t0
       const x0 = locations[i].x
       const x1 = this.gridSize - 1 - locations[i].x
       const y = locations[i].y
-      const unit0 = new Unit(0, i, m0, x0, y, 0)
-      const unit1 = new Unit(1, i, m1, x1, y, 0)
+      console.log('buildUnit', i, x0, y)
+      const unit0 = new Unit(t0, i, 0, x0, y, 0)
+      const unit1 = new Unit(t1, i, 1, x1, y, 0)
       this.units.push(unit0)
       this.units.push(unit1)
     })

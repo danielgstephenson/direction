@@ -1,18 +1,19 @@
 import { range } from '../math'
 import { GameSummary } from '../summaries/gameSummary'
 import { Client } from './client'
-import { SVG } from '@svgdotjs/svg.js'
+import { Circle, SVG } from '@svgdotjs/svg.js'
 
 export class Renderer {
   client: Client
   svgs = [SVG(), SVG()]
+  units: Circle[] = []
   game: GameSummary
   svgDiv = document.getElementById('svgDiv') as HTMLDivElement
   borderColor = 'hsl(0, 0%, 10%)'
   crownColor = 'hsl(50, 100%, 50%)'
   teamColors = [
-    'hsl(210, 100%, 50%)',
-    'hsl(120, 75%, 40%)'
+    'hsl(210, 100%, 40%)',
+    'hsl(120, 75%, 30%)'
   ]
 
   constructor (client: Client) {
@@ -37,13 +38,12 @@ export class Renderer {
           rect.stroke({ color: this.borderColor, width: 0.07 })
         })
       })
-      const units = game.units.filter(unit => unit.m === m)
-      console.log('units', units)
-      units.forEach(unit => {
+      game.units.filter(unit => unit.m === m).forEach(unit => {
         const xPos = unit.x + 0.5
         const yPos = unit.y + 0.5
         const color = this.teamColors[unit.team]
         const circle = svg.circle(0.9)
+        this.units.push(circle)
         circle.center(xPos, yPos)
         circle.fill(color)
       })
