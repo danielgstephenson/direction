@@ -21,12 +21,10 @@ export class Renderer {
     this.svgs.forEach(svg => svg.addTo('#svgDiv'))
     this.onResize()
     window.addEventListener('resize', () => this.onResize())
-    this.setup()
   }
 
-  setup (): void {
+  setup (gridSize: number): void {
     this.svgs.forEach(svg => {
-      const gridSize = 8
       const padding = 0.5
       svg.viewbox(`-${padding} -${padding} ${gridSize + 2 * padding} ${gridSize + 2 * padding}`)
       range(gridSize).forEach(x => {

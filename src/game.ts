@@ -1,4 +1,3 @@
-import { Manifold } from './manifold'
 import { choose } from './math'
 import { Player } from './player'
 import { Server } from './server'
@@ -7,12 +6,12 @@ import { GameSummary } from './summaries/gameSummary'
 export class Game {
   server = new Server()
   players: Player[] = []
-  manifold = new Manifold()
   token = String(Math.random())
   timeScale: number
   countdown: number
   maxCountdown: number
   stepInterval = 0.5
+  gridSize = 8
 
   constructor () {
     this.setupIo()
