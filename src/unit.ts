@@ -1,4 +1,5 @@
 import { Game } from './game'
+import { range } from './math'
 
 export class Unit {
   game: Game
@@ -28,16 +29,63 @@ export class Unit {
     const angle = 0.5 * Math.PI * this.dir
     const dx = Math.round(Math.cos(angle))
     const dy = Math.round(Math.sin(angle))
-    const x2 = this.x + dx
-    const y2 = this.y + dy
-    const s = this.game.gridSize - 1
-    const blocked = x2 < 0 || y2 < 0 || x2 > s || y2 > s
-    if (blocked) {
-      this.newDir = (this.dir + 2) % 4
-      this.dir = this.newDir
+    if (this.isBlocked(dx, dy)) {
+      this.flip()
       return
     }
-    this.x = x2
-    this.y = y2
+    const obstacles = this.getObstacles(dx, dy)
+    obstacles.forEach(unit => {
+      unit.x += dx
+      unit.y += dy
+    })
+    this.x += dx
+    this.y += dy
+  }
+
+  getOccupants (m: number, x: number, y: number): Unit[] {
+    const occupants: Unit[] = []
+    for (const unit of this.game.units) {
+      if (unit.m === m && unit.x === x && unit.y === y) {
+        occupants.push(unit)
+      }
+    }
+    return occupants
+  }
+
+  isOpen (m: number, x: number, y: number): boolean {
+    const s = this.game.mapSize - 1
+    const outside = x < 0 || y < 0 || x > s || y > s
+    if (outside) return false
+    const occupants = this.getOccupants(m, x, y)
+    if (occupants.length > 0) return false
+    return true
+  }
+
+  isBlocked (dx: number, dy: number): boolean {
+    for (const dt of range(1, this.game.mapSize)) {
+      const xt = this.x + dx * dt
+      const yt = this.y + dy * dt
+      if (this.isOpen(this.m, xt, yt)) {
+        return false
+      }
+    }
+    return true
+  }
+
+  getObstacles (dx: number, dy: number): Unit[] {
+    const obstacles: Unit[] = []
+    for (const dt of range(1, this.game.mapSize)) {
+      const xt = this.x + dx * dt
+      const yt = this.y + dy * dt
+      const occupants = this.getOccupants(this.m, xt, yt)
+      if (occupants.length === 0) return obstacles
+      obstacles.push(...occupants)
+    }
+    return obstacles
+  }
+
+  flip (): void {
+    this.newDir = (this.dir + 2) % 4
+    this.dir = this.newDir
   }
 }

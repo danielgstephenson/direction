@@ -10,25 +10,26 @@ export class Game {
   units: Unit[] = []
   teams: Unit[][] = [[], []]
   locations: Vec2[] = []
+  goals: Vec2[] = []
   token = String(Math.random())
   timeScale: number
   countdown: number
   moveInterval = 0.5
   updateInterval = 0.2
-  gridSize = 6
-  teamSize = 6
+  mapSize = 5
+  teamSize = 4
   phase = 0
 
   constructor () {
-    this.setupIo()
     this.timeScale = this.server.config.timeScale
     this.countdown = this.moveInterval
-    range(this.gridSize).forEach(x => {
-      range(this.gridSize).forEach(y => {
+    range(this.mapSize).forEach(x => {
+      range(this.mapSize).forEach(y => {
         this.locations.push({ x, y })
       })
     })
-    this.buildUnits()
+    this.setup()
+    this.startIo()
     setInterval(() => this.update(), this.updateInterval / this.timeScale * 1000)
   }
 
@@ -53,7 +54,7 @@ export class Game {
     })
   }
 
-  setupIo (): void {
+  startIo (): void {
     this.server.io.on('connection', socket => {
       const player = new Player(this, socket)
       this.players.push(player)
@@ -70,7 +71,7 @@ export class Game {
     })
   }
 
-  buildUnits (): void {
+  setup (): void {
     this.units = []
     const offset = choose([0, 1])
     const locations = shuffle(this.locations)
@@ -78,7 +79,7 @@ export class Game {
       const t0 = (i + offset) % 2
       const t1 = 1 - t0
       const x0 = locations[i].x
-      const x1 = this.gridSize - 1 - locations[i].x
+      const x1 = this.mapSize - 1 - x0
       const y = locations[i].y
       const dir0 = choose([0, 1, 2, 3])
       const dir1 = [1, 3].includes(dir0) ? dir0 : (dir0 + 2) % 4
@@ -87,6 +88,11 @@ export class Game {
       this.teams[t0].push(unit0)
       this.teams[t1].push(unit1)
     })
+    const gx0 = locations[this.teamSize].x
+    const gx1 = this.mapSize - 1 - gx0
+    const gy = locations[this.teamSize].y
+    this.goals[0] = { x: gx0, y: gy }
+    this.goals[1] = { x: gx1, y: gy }
   }
 
   getSmallTeam (): number {
