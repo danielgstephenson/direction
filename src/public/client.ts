@@ -26,6 +26,7 @@ export class Client {
   onUpdate (game: GameSummary): void {
     const newServer = !['', game.token].includes(this.renderer.game.token)
     if (newServer) location.reload()
+    this.renderer.onUpdate(game)
     this.renderer.game = game
   }
 }

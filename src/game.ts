@@ -13,7 +13,7 @@ export class Game {
   token = String(Math.random())
   timeScale: number
   countdown: number
-  moveInterval: number
+  moveInterval = 0.5
   updateInterval = 0.2
   gridSize = 6
   teamSize = 6
@@ -22,7 +22,6 @@ export class Game {
   constructor () {
     this.setupIo()
     this.timeScale = this.server.config.timeScale
-    this.moveInterval = 1
     this.countdown = this.moveInterval
     range(this.gridSize).forEach(x => {
       range(this.gridSize).forEach(y => {

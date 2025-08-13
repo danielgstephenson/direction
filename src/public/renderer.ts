@@ -6,7 +6,7 @@ import { SVG, G } from '@svgdotjs/svg.js'
 export class Renderer {
   client: Client
   svgs = [SVG(), SVG()]
-  units: G[] = []
+  unitGroups: G[] = []
   game: GameSummary
   svgDiv = document.getElementById('svgDiv') as HTMLDivElement
   borderColor = 'hsl(0, 0%, 10%)'
@@ -61,7 +61,24 @@ export class Renderer {
           group.circle(0.14).center(x, y).fill('black')
         })
         circle.maskWith(mask)
-        this.units.push(group)
+        this.unitGroups[unit.id] = group
+      })
+    })
+  }
+
+  onUpdate (game: GameSummary): void {
+    game.units.forEach(unit => {
+      const group = this.unitGroups[unit.id]
+      const oldTransform = group.transform()
+      group.transform({
+        translateX: oldTransform.translateX,
+        translateY: oldTransform.translateY,
+        rotate: 90 * unit.dir
+      })
+      group.animate(500).transform({
+        translateX: unit.x,
+        translateY: unit.y,
+        rotate: 90 * unit.dir
       })
     })
   }
