@@ -18,12 +18,12 @@ export class Client {
       console.log('setup')
       this.renderer.setup(game)
     })
-    this.socket.on('step', (game: GameSummary) => {
-      this.onStep(game)
+    this.socket.on('update', (game: GameSummary) => {
+      this.onUpdate(game)
     })
   }
 
-  onStep (game: GameSummary): void {
+  onUpdate (game: GameSummary): void {
     const newServer = !['', game.token].includes(this.renderer.game.token)
     if (newServer) location.reload()
     this.renderer.game = game

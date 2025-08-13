@@ -1,16 +1,16 @@
 import { range } from '../math'
 import { GameSummary } from '../summaries/gameSummary'
 import { Client } from './client'
-import { Circle, SVG } from '@svgdotjs/svg.js'
+import { SVG, G } from '@svgdotjs/svg.js'
 
 export class Renderer {
   client: Client
   svgs = [SVG(), SVG()]
-  units: Circle[] = []
+  units: G[] = []
   game: GameSummary
   svgDiv = document.getElementById('svgDiv') as HTMLDivElement
   borderColor = 'hsl(0, 0%, 10%)'
-  crownColor = 'hsl(50, 100%, 50%)'
+  goalColor = 'hsl(50, 100%, 50%)'
   teamColors = [
     'hsl(210, 100%, 40%)',
     'hsl(120, 75%, 30%)'
@@ -27,25 +27,41 @@ export class Renderer {
   setup (game: GameSummary): void {
     this.svgs.forEach((svg, m) => {
       const gridSize = game.gridSize
-      const padding = 0.5
-      svg.viewbox(`-${padding} -${padding} ${gridSize + 2 * padding} ${gridSize + 2 * padding}`)
+      const padding = 1
+      const x = -0.5 - padding
+      const y = -0.5 - padding
+      const width = gridSize + 2 * padding
+      const height = gridSize + 2 * padding
+      svg.flip('y')
+      svg.viewbox(x, y, width, height)
       range(gridSize).forEach(x => {
         range(gridSize).forEach(y => {
-          const xPos = x + 0.5
-          const yPos = y + 0.5
-          const rect = svg.rect(1, 1)
-          rect.center(xPos, yPos)
+          const rect = svg.rect(1, 1).center(x, y)
           rect.stroke({ color: this.borderColor, width: 0.07 })
         })
       })
       game.units.filter(unit => unit.m === m).forEach(unit => {
-        const xPos = unit.x + 0.5
-        const yPos = unit.y + 0.5
         const color = this.teamColors[unit.team]
-        const circle = svg.circle(0.9)
-        this.units.push(circle)
-        circle.center(xPos, yPos)
-        circle.fill(color)
+        const group = svg.group().transform({
+          translateX: unit.x,
+          translateY: unit.y,
+          rotate: 90 * unit.dir
+        })
+        const circle = group.circle(0.9).center(0, 0).fill(color)
+        const square = group.rect(1, 1).center(0, 0).fill('white')
+        const pointer = group.rect(0.4, 0.2).center(0.3, 0).fill('black')
+        const mask = group.mask().add(square).add(pointer)
+        const startAngle = Math.PI * 0.1
+        const endAngle = Math.PI * 1.9
+        const angleStep = (endAngle - startAngle) / (unit.rank + 1)
+        range(unit.rank).forEach(i => {
+          const angle = startAngle + angleStep * (i + 1)
+          const x = 0.26 * Math.cos(angle)
+          const y = 0.26 * Math.sin(angle)
+          group.circle(0.14).center(x, y).fill('black')
+        })
+        circle.maskWith(mask)
+        this.units.push(group)
       })
     })
   }

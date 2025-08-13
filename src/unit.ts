@@ -1,17 +1,32 @@
+import { Game } from './game'
+
 export class Unit {
+  id: number
   team: number
-  index: number
+  rank: number
   m: number
   x: number
   y: number
-  direction: number
+  dir: number
+  newDir: number
 
-  constructor (team: number, index: number, m: number, x: number, y: number, direction: number) {
+  constructor (game: Game, team: number, rank: number, m: number, x: number, y: number, dir: number) {
+    this.id = game.units.length
+    game.units[this.id] = this
     this.team = team
-    this.index = index
+    this.rank = rank
     this.m = m
     this.x = x
     this.y = y
-    this.direction = direction
+    this.dir = dir
+    this.newDir = dir
+  }
+
+  move (): void {
+    const angle = 0.5 * Math.PI * this.dir
+    const dx = Math.sign(Math.cos(angle))
+    const dy = Math.sign(Math.sin(angle))
+    this.x += dx
+    this.y += dy
   }
 }
