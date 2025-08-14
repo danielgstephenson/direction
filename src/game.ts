@@ -1,4 +1,5 @@
 import { choose, range, shuffle, Vec2 } from './math'
+import { directInterval, mapSize, moveInterval, teamSize, updateInterval } from './params'
 import { Player } from './player'
 import { Server } from './server'
 import { GameSummary } from './summaries/gameSummary'
@@ -14,42 +15,54 @@ export class Game {
   token = String(Math.random())
   timeScale: number
   countdown: number
-  moveInterval = 0.5
-  updateInterval = 0.2
-  mapSize = 5
-  teamSize = 4
-  phase = 0
+  state = 'move'
+  moveRank = 0
+  directRank = 0
 
   constructor () {
     this.timeScale = this.server.config.timeScale
-    this.countdown = this.moveInterval
-    range(this.mapSize).forEach(x => {
-      range(this.mapSize).forEach(y => {
+    this.countdown = moveInterval
+    range(mapSize).forEach(x => {
+      range(mapSize).forEach(y => {
         this.locations.push({ x, y })
       })
     })
     this.setup()
     this.startIo()
-    setInterval(() => this.update(), this.updateInterval / this.timeScale * 1000)
+    setInterval(() => this.update(), updateInterval / this.timeScale * 1000)
   }
 
   update (): void {
-    this.countdown = Math.max(0, this.countdown - this.updateInterval)
-    this.players.forEach(player => player.socket.emit('tick', this.countdown))
-    if (this.countdown === 0) {
-      this.teams[0][this.phase].move()
-      this.teams[1][this.phase].move()
+    this.countdown = Math.max(0, this.countdown - updateInterval)
+    this.players.forEach(player => player.socket.emit('tick', this.countdown, this.state))
+    if (this.countdown === 0) this.step()
+  }
+
+  step (): void {
+    if (this.state === 'move') {
+      this.teams[0][this.moveRank].move()
+      this.teams[1][this.moveRank].move()
       this.updatePlayers()
-      this.phase = (this.phase + 1) % this.teamSize
-      this.countdown = this.moveInterval
+      this.moveRank = (this.moveRank + 1) % teamSize
+      this.state = this.moveRank === 0 ? 'direct' : 'move'
+      this.countdown = this.moveRank === 0 ? directInterval : moveInterval
+    } else if (this.state === 'direct') {
+      const unit0 = this.teams[0][this.directRank]
+      const unit1 = this.teams[1][this.directRank]
+      unit0.dir = unit0.newDir
+      unit1.dir = unit1.newDir
+      this.directRank = (this.directRank + 1) % teamSize
+      this.moveRank = 0
+      this.state = 'move'
+      this.countdown = moveInterval
     }
   }
 
   updatePlayers (): void {
+    const summary0 = new GameSummary(0, this)
     const summary1 = new GameSummary(1, this)
-    const summary2 = new GameSummary(2, this)
     this.players.forEach(player => {
-      const summary = player.team === 1 ? summary1 : summary2
+      const summary = player.team === 0 ? summary0 : summary1
       player.socket.emit('update', summary)
     })
   }
@@ -75,11 +88,11 @@ export class Game {
     this.units = []
     const offset = choose([0, 1])
     const locations = shuffle(this.locations)
-    range(this.teamSize).forEach(i => {
+    range(teamSize).forEach(i => {
       const t0 = (i + offset) % 2
       const t1 = 1 - t0
       const x0 = locations[i].x
-      const x1 = this.mapSize - 1 - x0
+      const x1 = mapSize - 1 - x0
       const y = locations[i].y
       const dir0 = choose([0, 1, 2, 3])
       const dir1 = [1, 3].includes(dir0) ? dir0 : (dir0 + 2) % 4
@@ -88,9 +101,9 @@ export class Game {
       this.teams[t0].push(unit0)
       this.teams[t1].push(unit1)
     })
-    const gx0 = locations[this.teamSize].x
-    const gx1 = this.mapSize - 1 - gx0
-    const gy = locations[this.teamSize].y
+    const gx0 = locations[teamSize].x
+    const gx1 = mapSize - 1 - gx0
+    const gy = locations[teamSize].y
     this.goals[0] = { x: gx0, y: gy }
     this.goals[1] = { x: gx1, y: gy }
   }

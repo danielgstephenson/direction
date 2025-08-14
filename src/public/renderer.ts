@@ -1,16 +1,20 @@
 import { range } from '../math'
+import { directInterval, mapSize, moveInterval } from '../params'
 import { GameSummary } from '../summaries/gameSummary'
 import { Client } from './client'
-import { SVG, G } from '@svgdotjs/svg.js'
+import { SVG, G, Rect } from '@svgdotjs/svg.js'
 
 export class Renderer {
   client: Client
   svgs = [SVG(), SVG()]
+  highlights: Rect[][][] = []
+  tiles: Rect[][][] = []
   unitGroups: G[] = []
   goalGroups: G[] = []
   game: GameSummary
   svgDiv = document.getElementById('svgDiv') as HTMLDivElement
   borderColor = 'hsl(0, 0%, 10%)'
+  directColor = 'hsl(0, 0%, 70%)'
   goalColor = 'hsl(60, 100%, 50%)'
   teamColors = [
     'hsl(210, 100%, 40%)',
@@ -27,18 +31,29 @@ export class Renderer {
 
   setup (game: GameSummary): void {
     this.svgs.forEach((svg, m) => {
-      const gridSize = game.mapSize
+      const mapGroup = svg.group()
+      this.tiles[m] = []
+      this.highlights[m] = []
       const padding = 0.5
       const x = -0.5 - padding
       const y = -0.5 - padding
-      const width = gridSize + 2 * padding
-      const height = gridSize + 2 * padding
+      const width = mapSize + 2 * padding
+      const height = mapSize + 2 * padding
       svg.flip('y')
       svg.viewbox(x, y, width, height)
-      range(gridSize).forEach(x => {
-        range(gridSize).forEach(y => {
-          const rect = svg.rect(1, 1).center(x, y)
-          rect.stroke({ color: this.borderColor, width: 0.07 })
+      range(mapSize).forEach(x => {
+        this.tiles[m][x] = []
+        this.highlights[m][x] = []
+        range(mapSize).forEach(y => {
+          const highlight = mapGroup.rect(1, 1).center(x, y)
+          highlight.stroke({ color: this.directColor, width: 0.07 })
+          highlight.fill('none')
+          highlight.opacity(0)
+          this.highlights[m][x][y] = highlight
+          const tile = mapGroup.rect(1, 1).center(x, y)
+          tile.stroke({ color: this.borderColor, width: 0.07 })
+          tile.fill('none')
+          this.tiles[m][x][y] = tile
         })
       })
       game.units.filter(unit => unit.m === m).forEach(unit => {
@@ -64,7 +79,6 @@ export class Renderer {
         circle.maskWith(mask)
         this.unitGroups[unit.id] = unitGroup
       })
-      console.log('game.goals', game.goals)
       const goal = game.goals[m]
       const goalGroup = svg.group().transform({
         translateX: goal.x,
@@ -72,6 +86,7 @@ export class Renderer {
       })
       this.goalGroups[m] = goalGroup
       const circle = goalGroup.circle(0.6).center(0, 0)
+      // Make the goal a star instead of a circle
       circle.fill({ opacity: 0 })
       circle.stroke({
         color: this.goalColor,
@@ -90,12 +105,40 @@ export class Renderer {
         translateY: oldTransform.translateY,
         rotate: 90 * unit.dir
       })
-      group.animate(500).transform({
+      group.animate(800 * moveInterval).transform({
         translateX: unit.x,
         translateY: unit.y,
         rotate: 90 * unit.dir
       })
     })
+  }
+
+  onTick (countdown: number, state: string): void {
+    this.game.countdown = countdown
+    this.game.state = state
+    if (state === 'direct') {
+      this.game.units.forEach(unit => {
+        const sameRank = unit.rank === this.game.directRank
+        const sameTeam = unit.team === this.game.team
+        if (sameRank && sameTeam) {
+          const highlight = this.highlights[unit.m][unit.x][unit.y]
+          highlight.front()
+          highlight.opacity(1)
+          const a = 4 * countdown / directInterval
+          const b = 4 - a
+          highlight.attr('stroke-dasharray', `${a} ${b}`)
+        }
+      })
+    } else if (state === 'move') {
+      range(2).forEach(m => {
+        range(mapSize).forEach(x => {
+          range(mapSize).forEach(y => {
+            const highlight = this.highlights[m][x][y]
+            highlight.opacity(0)
+          })
+        })
+      })
+    }
   }
 
   onResize (): void {

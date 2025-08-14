@@ -1,5 +1,6 @@
 import { Game } from './game'
 import { range } from './math'
+import { mapSize } from './params'
 
 export class Unit {
   game: Game
@@ -53,7 +54,7 @@ export class Unit {
   }
 
   isOpen (m: number, x: number, y: number): boolean {
-    const s = this.game.mapSize - 1
+    const s = mapSize - 1
     const outside = x < 0 || y < 0 || x > s || y > s
     if (outside) return false
     const occupants = this.getOccupants(m, x, y)
@@ -62,7 +63,7 @@ export class Unit {
   }
 
   isBlocked (dx: number, dy: number): boolean {
-    for (const dt of range(1, this.game.mapSize)) {
+    for (const dt of range(1, mapSize)) {
       const xt = this.x + dx * dt
       const yt = this.y + dy * dt
       if (this.isOpen(this.m, xt, yt)) {
@@ -74,7 +75,7 @@ export class Unit {
 
   getObstacles (dx: number, dy: number): Unit[] {
     const obstacles: Unit[] = []
-    for (const dt of range(1, this.game.mapSize)) {
+    for (const dt of range(1, mapSize)) {
       const xt = this.x + dx * dt
       const yt = this.y + dy * dt
       const occupants = this.getOccupants(this.m, xt, yt)

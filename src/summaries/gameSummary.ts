@@ -6,8 +6,8 @@ export class GameSummary {
   team = 0
   token = ''
   countdown = 0
-  maxCountdown = 80
-  mapSize = 8
+  directRank = 0
+  state = 'move'
   units: UnitSummary[] = []
   goals: Vec2[] = []
 
@@ -15,9 +15,11 @@ export class GameSummary {
     this.team = team
     if (game != null) {
       this.token = game.token
-      this.mapSize = game.mapSize
       this.units = game.units.map(unit => new UnitSummary(team, unit))
       this.goals = game.goals
+      this.countdown = game.countdown
+      this.directRank = game.directRank
+      this.state = game.state
     }
   }
 }

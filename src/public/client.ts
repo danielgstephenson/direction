@@ -1,16 +1,14 @@
 import io from 'socket.io-client'
 import { GameSummary } from '../summaries/gameSummary'
 import { Renderer } from './renderer'
+import { Input } from './input'
 
 export class Client {
   socket = io()
   renderer = new Renderer(this)
+  input = new Input(this)
 
   constructor () {
-    document.oncontextmenu = () => false
-    document.onmousedown = (event) => {
-      console.log('mousedown', event.button)
-    }
     this.socket.on('connected', () => {
       console.log('connected')
     })
@@ -20,6 +18,9 @@ export class Client {
     })
     this.socket.on('update', (game: GameSummary) => {
       this.onUpdate(game)
+    })
+    this.socket.on('tick', (countdown: number, state: string) => {
+      this.renderer.onTick(countdown, state)
     })
   }
 
