@@ -19,8 +19,8 @@ export class Client {
     this.socket.on('update', (game: GameSummary) => {
       this.onUpdate(game)
     })
-    this.socket.on('tick', (countdown: number, state: string) => {
-      this.renderer.onTick(countdown, state)
+    this.socket.on('tick', (countdown: number, state: string, newDir: number) => {
+      this.renderer.onTick(countdown, state, newDir)
     })
   }
 

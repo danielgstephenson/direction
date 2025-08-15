@@ -27,6 +27,7 @@ export class Unit {
   }
 
   move (): void {
+    this.dir = this.newDir
     const angle = 0.5 * Math.PI * this.dir
     const dx = Math.round(Math.cos(angle))
     const dy = Math.round(Math.sin(angle))
@@ -86,7 +87,7 @@ export class Unit {
   }
 
   flip (): void {
-    this.newDir = (this.dir + 2) % 4
-    this.dir = this.newDir
+    this.dir = (this.dir + 2) % 4
+    this.newDir = this.dir
   }
 }

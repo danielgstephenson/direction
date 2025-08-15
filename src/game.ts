@@ -12,10 +12,12 @@ export class Game {
   teams: Unit[][] = [[], []]
   locations: Vec2[] = []
   goals: Vec2[] = []
+  scores = [0, 0]
   token = String(Math.random())
   timeScale: number
   countdown: number
   state = 'move'
+
   moveRank = 0
   directRank = 0
 
@@ -29,12 +31,15 @@ export class Game {
     })
     this.setup()
     this.startIo()
-    setInterval(() => this.update(), updateInterval / this.timeScale * 1000)
+    setInterval(() => this.tick(), updateInterval / this.timeScale * 1000)
   }
 
-  update (): void {
+  tick (): void {
     this.countdown = Math.max(0, this.countdown - updateInterval)
-    this.players.forEach(player => player.socket.emit('tick', this.countdown, this.state))
+    this.players.forEach(player => {
+      const newDir = this.teams[player.team][this.directRank].newDir
+      player.socket.emit('tick', this.countdown, this.state, newDir)
+    })
     if (this.countdown === 0) this.step()
   }
 
@@ -42,10 +47,11 @@ export class Game {
     if (this.state === 'move') {
       this.teams[0][this.moveRank].move()
       this.teams[1][this.moveRank].move()
-      this.updatePlayers()
       this.moveRank = (this.moveRank + 1) % teamSize
       this.state = this.moveRank === 0 ? 'direct' : 'move'
       this.countdown = this.moveRank === 0 ? directInterval : moveInterval
+      this.checkWin()
+      this.updatePlayers()
     } else if (this.state === 'direct') {
       const unit0 = this.teams[0][this.directRank]
       const unit1 = this.teams[1][this.directRank]
@@ -55,6 +61,21 @@ export class Game {
       this.moveRank = 0
       this.state = 'move'
       this.countdown = moveInterval
+    }
+  }
+
+  checkWin (): void {
+    this.scores[0] = 0
+    this.scores[1] = 0
+    this.units.forEach(unit => {
+      if (unit.x === this.goals[unit.m].x && unit.y === this.goals[unit.m].y) {
+        if (unit.team === 0) this.scores[0] += 1
+        if (unit.team === 1) this.scores[1] += 1
+      }
+    })
+    if (this.scores[0] !== this.scores[1]) {
+      console.log('win')
+      this.state = 'win'
     }
   }
 
@@ -74,8 +95,11 @@ export class Game {
       console.log('connect:', socket.id, this.players.length)
       socket.emit('connected', this.token)
       socket.emit('setup', new GameSummary(player.team, this))
-      socket.on('choice', (choice: number) => {
-        console.log(socket.id, 'choice:', choice)
+      socket.on('choice', (dir: number) => {
+        console.log(socket.id, 'choice:', dir)
+        if (this.state === 'direct') {
+          this.teams[player.team][this.directRank].newDir = dir
+        }
       })
       socket.on('disconnect', () => {
         this.players = this.players.filter(p => p.id !== socket.id)
@@ -92,17 +116,17 @@ export class Game {
       const t0 = (i + offset) % 2
       const t1 = 1 - t0
       const x0 = locations[i].x
-      const x1 = mapSize - 1 - x0
+      const x1 = x0 // mapSize - 1 - x0
       const y = locations[i].y
       const dir0 = choose([0, 1, 2, 3])
-      const dir1 = [1, 3].includes(dir0) ? dir0 : (dir0 + 2) % 4
+      const dir1 = dir0 // [1, 3].includes(dir0) ? dir0 : (dir0 + 2) % 4
       const unit0 = new Unit(this, t0, i, 0, x0, y, dir0)
       const unit1 = new Unit(this, t1, i, 1, x1, y, dir1)
       this.teams[t0].push(unit0)
       this.teams[t1].push(unit1)
     })
     const gx0 = locations[teamSize].x
-    const gx1 = mapSize - 1 - gx0
+    const gx1 = gx0 // mapSize - 1 - gx0
     const gy = locations[teamSize].y
     this.goals[0] = { x: gx0, y: gy }
     this.goals[1] = { x: gx1, y: gy }

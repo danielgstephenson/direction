@@ -12,7 +12,15 @@ export class Input {
   }
 
   onkeydown (event: KeyboardEvent): void {
-    console.log('Key pressed:', event.key)
+    if (event.key === 'ArrowUp' || event.key === 'w') {
+      this.client.socket.emit('choice', 1)
+    } else if (event.key === 'ArrowDown' || event.key === 's') {
+      this.client.socket.emit('choice', 3)
+    } else if (event.key === 'ArrowLeft' || event.key === 'a') {
+      this.client.socket.emit('choice', 2)
+    } else if (event.key === 'ArrowRight' || event.key === 'd') {
+      this.client.socket.emit('choice', 0)
+    }
   }
 
   onmousedown (event: MouseEvent): void {

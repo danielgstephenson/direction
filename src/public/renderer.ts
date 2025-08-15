@@ -97,6 +97,12 @@ export class Renderer {
   }
 
   onUpdate (game: GameSummary): void {
+    let mapColor = this.borderColor
+    if (game.scores[0] > game.scores[1]) mapColor = this.teamColors[0]
+    if (game.scores[1] > game.scores[0]) mapColor = this.teamColors[1]
+    this.tiles.flat().flat().forEach(tile => {
+      tile.stroke({ color: mapColor, width: 0.05 })
+    })
     game.units.forEach(unit => {
       const group = this.unitGroups[unit.id]
       const oldTransform = group.transform()
@@ -105,15 +111,18 @@ export class Renderer {
         translateY: oldTransform.translateY,
         rotate: 90 * unit.dir
       })
-      group.animate(800 * moveInterval).transform({
-        translateX: unit.x,
-        translateY: unit.y,
-        rotate: 90 * unit.dir
-      })
+      const moved = oldTransform.translateX !== unit.x || oldTransform.translateY !== unit.y
+      if (moved) {
+        group.animate(800 * moveInterval).transform({
+          translateX: unit.x,
+          translateY: unit.y,
+          rotate: 90 * unit.dir
+        })
+      }
     })
   }
 
-  onTick (countdown: number, state: string): void {
+  onTick (countdown: number, state: string, newDir: number): void {
     this.game.countdown = countdown
     this.game.state = state
     if (state === 'direct') {
@@ -121,6 +130,13 @@ export class Renderer {
         const sameRank = unit.rank === this.game.directRank
         const sameTeam = unit.team === this.game.team
         if (sameRank && sameTeam) {
+          const unitGroup = this.unitGroups[unit.id]
+          const oldTransform = unitGroup.transform()
+          unitGroup.transform({
+            translateX: oldTransform.translateX,
+            translateY: oldTransform.translateY,
+            rotate: 90 * newDir
+          })
           const highlight = this.highlights[unit.m][unit.x][unit.y]
           highlight.front()
           highlight.opacity(1)

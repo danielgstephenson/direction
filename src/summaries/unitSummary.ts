@@ -16,6 +16,6 @@ export class UnitSummary {
     this.m = unit.m
     this.x = unit.x
     this.y = unit.y
-    this.dir = team === unit.team ? unit.newDir : unit.dir
+    this.dir = unit.dir
   }
 }

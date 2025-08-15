@@ -7,6 +7,7 @@ export class GameSummary {
   token = ''
   countdown = 0
   directRank = 0
+  scores = [0, 0]
   state = 'move'
   units: UnitSummary[] = []
   goals: Vec2[] = []
@@ -20,6 +21,7 @@ export class GameSummary {
       this.countdown = game.countdown
       this.directRank = game.directRank
       this.state = game.state
+      this.scores = game.scores
     }
   }
 }
