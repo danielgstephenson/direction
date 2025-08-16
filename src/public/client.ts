@@ -24,7 +24,6 @@ export class Client {
       this.renderer.onState(state)
     })
     this.socket.on('tick', (tick: Tick) => {
-      console.log('tick.token', tick.token)
       this.checkToken(tick.token)
       this.renderer.onTick(tick)
     })
