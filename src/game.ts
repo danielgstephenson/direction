@@ -38,7 +38,7 @@ export class Game {
 
   step (): void {
     if (this.phase === 'move') {
-      this.runner.onStep(this.state)
+      this.runner.onStep(this.state, this.choices)
       this.state.regions.forEach(region => {
         const unit = region.units[region.moveRank]
         this.choices[unit.team] = unit.dir
@@ -52,10 +52,6 @@ export class Game {
         if (this.getPlayerCount(team) === 0) {
           this.choices[team] = choose([0, 1, 2, 3])
         }
-      })
-      this.state.regions.forEach(region => {
-        const unit = region.units[region.moveRank]
-        unit.dir = this.choices[unit.team]
       })
       this.phase = 'move'
       this.countdown = moveInterval

@@ -15,14 +15,16 @@ export class Runner {
     })
   }
 
-  onStep (state: State): void {
+  onStep (state: State, choices: number[]): void {
     state.regions.forEach(region => {
-      this.advance(region)
+      const unit = region.units[region.moveRank]
+      this.advance(region, choices[unit.team])
     })
   }
 
-  advance (region: Region): void {
+  advance (region: Region, choice: number): void {
     const unit = region.units[region.moveRank]
+    unit.dir = choice
     this.move(region, unit)
     region.scores = this.getScores(region)
     region.moveRank = (region.moveRank + 1) % teamSize
