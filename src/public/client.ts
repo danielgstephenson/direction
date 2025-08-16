@@ -16,16 +16,26 @@ export class Client {
     })
     this.socket.on('setup', (state: State) => {
       console.log('setup')
+      this.checkToken(state.token)
       this.renderer.setup(state)
     })
     this.socket.on('state', (state: State) => {
+      this.checkToken(state.token)
       this.renderer.onState(state)
     })
     this.socket.on('tick', (tick: Tick) => {
-      const newServer = !['', tick.token].includes(this.token)
-      if (newServer) location.reload()
-      this.token = tick.token
+      console.log('tick.token', tick.token)
+      this.checkToken(tick.token)
       this.renderer.onTick(tick)
     })
+  }
+
+  checkToken (token: string): void {
+    const newServer = !['', token].includes(this.token)
+    if (newServer) {
+      this.renderer.svgDiv.style.display = 'none'
+      location.reload()
+    }
+    this.token = token
   }
 }

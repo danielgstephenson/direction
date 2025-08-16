@@ -1,6 +1,10 @@
 import { Region } from './region'
 
 export class State {
-  token: string = String(Math.random())
+  token: string
   regions: Region[] = []
+
+  constructor (token: string = '') {
+    this.token = token
+  }
 }

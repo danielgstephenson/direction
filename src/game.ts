@@ -7,13 +7,14 @@ import { Runner } from './runner'
 import { Tick } from './tick'
 
 export class Game {
+  token = String(Math.random())
   server = new Server()
   players: Player[] = []
-  state = new State()
+  state = new State(this.token)
   runner = new Runner()
-  token = String(Math.random())
   timeScale: number
   countdown = choiceInterval
+  paused = true
   phase = 'choice'
   scores = [0, 0]
   choices = [0, 0]
@@ -26,11 +27,11 @@ export class Game {
   }
 
   tick (): void {
-    if (this.players.length === 0) return
-    this.countdown = Math.max(0, this.countdown - updateInterval)
     this.players.forEach(player => {
       player.socket.emit('tick', new Tick(this, player.team))
     })
+    if (this.paused) return
+    this.countdown = Math.max(0, this.countdown - updateInterval)
     if (this.countdown === 0) {
       this.step()
     }
@@ -86,6 +87,7 @@ export class Game {
       socket.on('choice', (choice: number) => {
         if (this.phase === 'choice') {
           this.choices[player.team] = choice
+          this.paused = false
         }
       })
       socket.on('disconnect', () => {
