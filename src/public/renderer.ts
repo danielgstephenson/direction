@@ -1,18 +1,24 @@
 import { range } from '../math'
-import { directInterval, mapSize, moveInterval } from '../params'
-import { GameSummary } from '../summaries/gameSummary'
+import { choiceInterval, gridSize, moveInterval } from '../params'
+import { State } from '../state'
+import { Tick } from '../tick'
 import { Client } from './client'
 import { SVG, G, Rect } from '@svgdotjs/svg.js'
 
 export class Renderer {
+  svgDiv = document.getElementById('svgDiv') as HTMLDivElement
   client: Client
   svgs = [SVG(), SVG()]
   highlights: Rect[][][] = []
   tiles: Rect[][][] = []
   unitGroups: G[] = []
   goalGroups: G[] = []
-  game: GameSummary
-  svgDiv = document.getElementById('svgDiv') as HTMLDivElement
+  state: State
+  team: number = 0
+  countdown = 0
+  phase = 'choice'
+  choice = 0
+
   borderColor = 'hsl(0, 0%, 10%)'
   directColor = 'hsl(0, 0%, 70%)'
   goalColor = 'hsl(60, 100%, 50%)'
@@ -23,40 +29,40 @@ export class Renderer {
 
   constructor (client: Client) {
     this.client = client
-    this.game = new GameSummary(1)
+    this.state = new State()
     this.svgs.forEach(svg => svg.addTo('#svgDiv'))
     this.onResize()
     window.addEventListener('resize', () => this.onResize())
   }
 
-  setup (game: GameSummary): void {
-    this.svgs.forEach((svg, m) => {
+  setup (state: State): void {
+    this.svgs.forEach((svg, grid) => {
       const mapGroup = svg.group()
-      this.tiles[m] = []
-      this.highlights[m] = []
+      this.tiles[grid] = []
+      this.highlights[grid] = []
       const padding = 0.5
       const x = -0.5 - padding
       const y = -0.5 - padding
-      const width = mapSize + 2 * padding
-      const height = mapSize + 2 * padding
+      const width = gridSize + 2 * padding
+      const height = gridSize + 2 * padding
       svg.flip('y')
       svg.viewbox(x, y, width, height)
-      range(mapSize).forEach(x => {
-        this.tiles[m][x] = []
-        this.highlights[m][x] = []
-        range(mapSize).forEach(y => {
+      range(gridSize).forEach(x => {
+        this.tiles[grid][x] = []
+        this.highlights[grid][x] = []
+        range(gridSize).forEach(y => {
           const highlight = mapGroup.rect(1, 1).center(x, y)
           highlight.stroke({ color: this.directColor, width: 0.07 })
           highlight.fill('none')
           highlight.opacity(0)
-          this.highlights[m][x][y] = highlight
+          this.highlights[grid][x][y] = highlight
           const tile = mapGroup.rect(1, 1).center(x, y)
           tile.stroke({ color: this.borderColor, width: 0.07 })
           tile.fill('none')
-          this.tiles[m][x][y] = tile
+          this.tiles[grid][x][y] = tile
         })
       })
-      game.units.filter(unit => unit.m === m).forEach(unit => {
+      state.units.filter(unit => unit.grid === grid).forEach(unit => {
         const color = this.teamColors[unit.team]
         const unitGroup = svg.group().transform({
           translateX: unit.x,
@@ -79,12 +85,11 @@ export class Renderer {
         circle.maskWith(mask)
         this.unitGroups[unit.id] = unitGroup
       })
-      const goal = game.goals[m]
       const goalGroup = svg.group().transform({
-        translateX: goal.x,
-        translateY: goal.y
+        translateX: state.goal.x,
+        translateY: state.goal.y
       })
-      this.goalGroups[m] = goalGroup
+      this.goalGroups[grid] = goalGroup
       const circle = goalGroup.circle(0.6).center(0, 0)
       // Make the goal a star instead of a circle
       circle.fill({ opacity: 0 })
@@ -96,14 +101,14 @@ export class Renderer {
     })
   }
 
-  onUpdate (game: GameSummary): void {
+  onState (state: State): void {
     let mapColor = this.borderColor
-    if (game.scores[0] > game.scores[1]) mapColor = this.teamColors[0]
-    if (game.scores[1] > game.scores[0]) mapColor = this.teamColors[1]
+    if (state.scores[0] > state.scores[1]) mapColor = this.teamColors[0]
+    if (state.scores[1] > state.scores[0]) mapColor = this.teamColors[1]
     this.tiles.flat().flat().forEach(tile => {
       tile.stroke({ color: mapColor, width: 0.05 })
     })
-    game.units.forEach(unit => {
+    state.units.forEach(unit => {
       const group = this.unitGroups[unit.id]
       const oldTransform = group.transform()
       group.transform({
@@ -122,34 +127,36 @@ export class Renderer {
     })
   }
 
-  onTick (countdown: number, state: string, newDir: number): void {
-    this.game.countdown = countdown
-    this.game.state = state
-    if (state === 'direct') {
-      this.game.units.forEach(unit => {
-        const sameRank = unit.rank === this.game.directRank
-        const sameTeam = unit.team === this.game.team
+  onTick (tick: Tick): void {
+    this.countdown = tick.countdown
+    this.phase = tick.phase
+    this.choice = tick.choice
+    this.team = tick.team
+    if (this.phase === 'choice') {
+      this.state.units.forEach(unit => {
+        const sameRank = unit.rank === this.state.moveRank
+        const sameTeam = unit.team === this.team
         if (sameRank && sameTeam) {
           const unitGroup = this.unitGroups[unit.id]
           const oldTransform = unitGroup.transform()
           unitGroup.transform({
             translateX: oldTransform.translateX,
             translateY: oldTransform.translateY,
-            rotate: 90 * newDir
+            rotate: 90 * this.choice
           })
-          const highlight = this.highlights[unit.m][unit.x][unit.y]
+          const highlight = this.highlights[unit.grid][unit.x][unit.y]
           highlight.front()
           highlight.opacity(1)
-          const a = 4 * countdown / directInterval
+          const a = 4 * tick.countdown / choiceInterval
           const b = 4 - a
           highlight.attr('stroke-dasharray', `${a} ${b}`)
         }
       })
-    } else if (state === 'move') {
-      range(2).forEach(m => {
-        range(mapSize).forEach(x => {
-          range(mapSize).forEach(y => {
-            const highlight = this.highlights[m][x][y]
+    } else if (this.phase === 'move') {
+      range(2).forEach(grid => {
+        range(gridSize).forEach(x => {
+          range(gridSize).forEach(y => {
+            const highlight = this.highlights[grid][x][y]
             highlight.opacity(0)
           })
         })

@@ -1,33 +1,33 @@
 import io from 'socket.io-client'
-import { GameSummary } from '../summaries/gameSummary'
 import { Renderer } from './renderer'
 import { Input } from './input'
+import { Tick } from '../tick'
+import { State } from '../state'
 
 export class Client {
   socket = io()
   renderer = new Renderer(this)
   input = new Input(this)
+  token = ''
 
   constructor () {
     this.socket.on('connected', () => {
       console.log('connected')
     })
-    this.socket.on('setup', (game: GameSummary) => {
+    this.socket.on('setup', (state: State) => {
       console.log('setup')
-      this.renderer.setup(game)
+      this.renderer.setup(state)
+      this.renderer.state = state
     })
-    this.socket.on('update', (game: GameSummary) => {
-      this.onUpdate(game)
+    this.socket.on('state', (state: State) => {
+      this.renderer.onState(state)
+      this.renderer.state = state
     })
-    this.socket.on('tick', (countdown: number, state: string, newDir: number) => {
-      this.renderer.onTick(countdown, state, newDir)
+    this.socket.on('tick', (tick: Tick) => {
+      const newServer = !['', tick.token].includes(this.token)
+      if (newServer) location.reload()
+      this.token = tick.token
+      this.renderer.onTick(tick)
     })
-  }
-
-  onUpdate (game: GameSummary): void {
-    const newServer = !['', game.token].includes(this.renderer.game.token)
-    if (newServer) location.reload()
-    this.renderer.onUpdate(game)
-    this.renderer.game = game
   }
 }
