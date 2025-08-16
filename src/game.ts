@@ -15,7 +15,7 @@ export class Game {
   timeScale: number
   countdown = choiceInterval
   phase = 'choice'
-
+  scores = [0, 0]
   choices = [0, 0]
 
   constructor () {
@@ -38,9 +38,11 @@ export class Game {
 
   step (): void {
     if (this.phase === 'move') {
-      this.runner.advance(this.state)
-      this.choices[0] = this.state.teams[0][this.state.moveRank].dir
-      this.choices[1] = this.state.teams[1][this.state.moveRank].dir
+      this.runner.onStep(this.state)
+      this.state.regions.forEach(region => {
+        const unit = region.units[region.moveRank]
+        this.choices[unit.team] = unit.dir
+      })
       this.phase = 'choice'
       this.countdown = choiceInterval
       this.checkWin()
@@ -51,17 +53,22 @@ export class Game {
           this.choices[team] = choose([0, 1, 2, 3])
         }
       })
-      const unit0 = this.state.teams[0][this.state.moveRank]
-      const unit1 = this.state.teams[1][this.state.moveRank]
-      unit0.dir = this.choices[0]
-      unit1.dir = this.choices[1]
+      this.state.regions.forEach(region => {
+        const unit = region.units[region.moveRank]
+        unit.dir = this.choices[unit.team]
+      })
       this.phase = 'move'
       this.countdown = moveInterval
     }
   }
 
   checkWin (): void {
-    if (this.state.scores[0] !== this.state.scores[1]) {
+    this.scores = [0, 0]
+    this.state.regions.forEach(region => {
+      this.scores[0] += region.scores[0]
+      this.scores[1] += region.scores[1]
+    })
+    if (this.scores[0] !== this.scores[1]) {
       console.log('win')
       this.phase = 'win'
     }

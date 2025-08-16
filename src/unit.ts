@@ -1,17 +1,15 @@
 export class Unit {
-  grid: number
+  region: number
   team: number
   rank: number
-  id: number
   x: number
   y: number
   dir: number
 
-  constructor (grid: number, team: number, rank: number, id: number, x: number, y: number, dir: number) {
-    this.grid = grid
+  constructor (region: number, team: number, rank: number, x: number, y: number, dir: number) {
+    this.region = region
     this.team = team
     this.rank = rank
-    this.id = id
     this.x = x
     this.y = y
     this.dir = dir

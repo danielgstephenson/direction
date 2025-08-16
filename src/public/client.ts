@@ -17,11 +17,9 @@ export class Client {
     this.socket.on('setup', (state: State) => {
       console.log('setup')
       this.renderer.setup(state)
-      this.renderer.state = state
     })
     this.socket.on('state', (state: State) => {
       this.renderer.onState(state)
-      this.renderer.state = state
     })
     this.socket.on('tick', (tick: Tick) => {
       const newServer = !['', tick.token].includes(this.token)
