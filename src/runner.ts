@@ -16,6 +16,7 @@ export class Runner {
   }
 
   onStep (state: State, choices: number[]): void {
+    state.round += 1
     state.regions.forEach(region => {
       const unit = region.units[region.moveRank]
       this.advance(region, choices[unit.team])
@@ -123,5 +124,25 @@ export class Runner {
     const goal = { x: center, y: center }
     state.regions[0].goal = goal
     state.regions[1].goal = goal
+  }
+
+  reset (state: State): void {
+    const locations = shuffle(this.locations)
+    state.round = 0
+    state.regions.forEach(region => {
+      region.moveRank = 0
+      region.scores = [0, 0]
+    })
+    range(teamSize).forEach(rank => {
+      const x = locations[rank].x
+      const y = locations[rank].y
+      const dir = choose([0, 1, 2, 3])
+      state.regions[0].units[rank].x = x
+      state.regions[1].units[rank].x = x
+      state.regions[0].units[rank].y = y
+      state.regions[1].units[rank].y = y
+      state.regions[0].units[rank].dir = dir
+      state.regions[1].units[rank].dir = dir
+    })
   }
 }

@@ -1,10 +1,11 @@
 import { choose, range } from './math'
-import { choiceInterval, moveInterval, updateInterval } from './params'
+import { choiceInterval, moveInterval, updateInterval, winInterval } from './params'
 import { Player } from './player'
 import { Server } from './server'
 import { State } from './state'
 import { Runner } from './runner'
 import { Tick } from './tick'
+import { Bot } from './bot'
 
 export class Game {
   token = String(Math.random())
@@ -12,6 +13,7 @@ export class Game {
   players: Player[] = []
   state = new State(this.token)
   runner = new Runner()
+  bot = new Bot(this)
   timeScale: number
   countdown = choiceInterval
   paused = true
@@ -51,12 +53,22 @@ export class Game {
     } else if (this.phase === 'choice') {
       range(2).forEach(team => {
         if (this.getPlayerCount(team) === 0) {
-          this.choices[team] = choose([0, 1, 2, 3])
+          this.choices[team] = this.bot.getChoice(team, this.state)
         }
       })
       this.phase = 'move'
       this.countdown = moveInterval
+    } else if (this.phase === 'win') {
+      this.restart()
     }
+  }
+
+  restart (): void {
+    this.runner.reset(this.state)
+    this.phase = 'choice'
+    this.countdown = choiceInterval
+    this.paused = true
+    this.updatePlayers()
   }
 
   checkWin (): void {
@@ -66,8 +78,8 @@ export class Game {
       this.scores[1] += region.scores[1]
     })
     if (this.scores[0] !== this.scores[1]) {
-      console.log('win')
       this.phase = 'win'
+      this.countdown = winInterval
     }
   }
 

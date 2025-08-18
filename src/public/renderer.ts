@@ -43,22 +43,23 @@ export class Renderer {
       scores[1] += region.scores[1]
     })
     if (scores[0] > scores[1]) mapColor = this.teamColors[0]
-    if (scores[1] > scores[0]) mapColor = this.teamColors[1]
+    else if (scores[1] > scores[0]) mapColor = this.teamColors[1]
+    else mapColor = this.borderColor
     this.tiles.flat().flat().forEach(tile => {
       tile.stroke({ color: mapColor, width: 0.05 })
     })
     newState.regions.forEach(region => {
       region.units.forEach((unit, rank) => {
-        const group = this.unitGroups[unit.region][rank]
-        const oldTransform = group.transform()
-        group.transform({
+        const unitGroup = this.unitGroups[unit.region][rank]
+        const oldTransform = unitGroup.transform()
+        unitGroup.transform({
           translateX: oldTransform.translateX,
           translateY: oldTransform.translateY,
           rotate: 90 * unit.dir
         })
         const moved = oldTransform.translateX !== unit.x || oldTransform.translateY !== unit.y
         if (moved) {
-          group.animate(800 * moveInterval).transform({
+          unitGroup.animate(800 * moveInterval).transform({
             translateX: unit.x,
             translateY: unit.y,
             rotate: 90 * unit.dir
@@ -120,6 +121,7 @@ export class Renderer {
   setup (newState: State): void {
     this.setupGrids(newState)
     this.setupUnits(newState)
+    this.setupGoals(newState)
     this.state = newState
   }
 
@@ -179,17 +181,32 @@ export class Renderer {
         circle.maskWith(mask)
         this.unitGroups[unit.region][rank] = unitGroup
       })
+    })
+  }
+
+  setupGoals (newState: State): void {
+    this.svgs.forEach((svg, r) => {
+      const region = newState.regions[r]
       const goalGroup = svg.group().transform({
         translateX: region.goal.x,
         translateY: region.goal.y
       })
       this.goalGroups[r] = goalGroup
-      const circle = goalGroup.circle(0.4).center(0, 0)
-      circle.fill({ opacity: 0 })
-      circle.stroke({
+      const startAngle = 0.5 * Math.PI
+      const spikes = 5
+      const outerRadius = 0.3
+      const innerRadius = 0.15
+      const starCoordinates: number[] = []
+      range(2 * spikes).forEach(i => {
+        const angle = startAngle + i * Math.PI / spikes
+        const r = (i % 2 === 0) ? outerRadius : innerRadius
+        const x = r * Math.cos(angle)
+        const y = r * Math.sin(angle)
+        starCoordinates.push(x, y)
+      })
+      goalGroup.polygon(starCoordinates).fill({
         color: this.goalColor,
-        opacity: 0.8,
-        width: 0.08
+        opacity: 0.8
       })
     })
   }
