@@ -1,5 +1,5 @@
 import { range } from '../math'
-import { choiceInterval, gridSize, moveInterval } from '../params'
+import { choiceInterval, endInterval, gridSize, maxRound, moveInterval } from '../params'
 import { State } from '../state'
 import { Tick } from '../tick'
 import { Client } from './client'
@@ -9,11 +9,14 @@ export class Renderer {
   svgDiv = document.getElementById('svgDiv') as HTMLDivElement
   client: Client
   svgs = [SVG(), SVG()]
+  roundLines: Rect[] = []
+  endLines: Rect[] = []
   highlights: Rect[][][] = []
   tiles: Rect[][][] = []
   unitGroups: G[][] = [[], []]
   goalGroups: G[] = []
   state: State
+  padding = 0.5
   team: number = 0
   countdown = 0
   phase = 'choice'
@@ -22,6 +25,7 @@ export class Renderer {
   borderColor = 'hsl(0, 0%, 10%)'
   directColor = 'hsl(0, 0%, 70%)'
   goalColor = 'hsl(60, 100%, 50%)'
+  tieColor = 'hsl(0, 100%, 20%)'
   teamColors = [
     'hsl(210, 100%, 40%)',
     'hsl(120, 75%, 30%)'
@@ -36,19 +40,8 @@ export class Renderer {
   }
 
   onState (newState: State): void {
-    let mapColor = this.borderColor
-    const scores = [0, 0]
-    newState.regions.forEach(region => {
-      scores[0] += region.scores[0]
-      scores[1] += region.scores[1]
-    })
-    if (scores[0] > scores[1]) mapColor = this.teamColors[0]
-    else if (scores[1] > scores[0]) mapColor = this.teamColors[1]
-    else mapColor = this.borderColor
-    this.tiles.flat().flat().forEach(tile => {
-      tile.stroke({ color: mapColor, width: 0.05 })
-    })
-    newState.regions.forEach(region => {
+    this.updateGrid(newState)
+    newState.regions.forEach((region, r) => {
       region.units.forEach((unit, rank) => {
         const unitGroup = this.unitGroups[unit.region][rank]
         const oldTransform = unitGroup.transform()
@@ -68,6 +61,36 @@ export class Renderer {
       })
     })
     this.state = newState
+  }
+
+  updateGrid (newState: State): void {
+    const scores = [0, 0]
+    newState.regions.forEach(region => {
+      scores[0] += region.scores[0]
+      scores[1] += region.scores[1]
+    })
+    let mapColor = this.borderColor
+    if (newState.phase === 'end') {
+      mapColor = this.tieColor
+      if (scores[0] > scores[1]) mapColor = this.teamColors[0]
+      else if (scores[1] > scores[0]) mapColor = this.teamColors[1]
+    } else {
+      this.endLines.forEach(endLine => {
+        endLine.attr('stroke-dasharray', '')
+      })
+    }
+    this.tiles.flat().flat().forEach(tile => {
+      tile.stroke({ color: mapColor, width: 0.05 })
+    })
+    this.endLines.forEach(endLine => {
+      endLine.stroke({ color: mapColor, width: 0.05 })
+    })
+    this.roundLines.forEach(roundLine => {
+      const perimeter = 4 * (gridSize + this.padding)
+      const b = perimeter * newState.round / maxRound
+      const a = perimeter - b
+      roundLine.attr('stroke-dasharray', `${a} ${b}`)
+    })
   }
 
   onTick (tick: Tick): void {
@@ -98,13 +121,20 @@ export class Renderer {
         })
       })
     } else if (this.phase === 'move') {
-      range(2).forEach(region => {
+      range(2).forEach(r => {
         range(gridSize).forEach(x => {
           range(gridSize).forEach(y => {
-            const highlight = this.highlights[region][x][y]
+            const highlight = this.highlights[r][x][y]
             highlight.opacity(0)
           })
         })
+      })
+    } else if (this.phase === 'end') {
+      const perimeter = 4 * (gridSize + 0.5 * this.padding)
+      const a = perimeter * tick.countdown / endInterval
+      const b = perimeter - a
+      this.endLines.forEach(endLine => {
+        endLine.attr('stroke-dasharray', `${a} ${b}`)
       })
     }
   }
@@ -119,22 +149,23 @@ export class Renderer {
   }
 
   setup (newState: State): void {
-    this.setupGrids(newState)
+    this.setupGrids()
+    this.setupRoundLines()
+    this.setupEndLines()
     this.setupUnits(newState)
     this.setupGoals(newState)
     this.state = newState
   }
 
-  setupGrids (newState: State): void {
+  setupGrids (): void {
     this.svgs.forEach((svg, r) => {
       const regionGroup = svg.group()
       this.tiles[r] = []
       this.highlights[r] = []
-      const padding = 0.5
-      const x = -0.5 - padding
-      const y = -0.5 - padding
-      const width = gridSize + 2 * padding
-      const height = gridSize + 2 * padding
+      const x = -0.5 - this.padding
+      const y = -0.5 - this.padding
+      const width = gridSize + 2 * this.padding
+      const height = gridSize + 2 * this.padding
       svg.flip('y')
       svg.viewbox(x, y, width, height)
       range(gridSize).forEach(x => {
@@ -142,7 +173,11 @@ export class Renderer {
         this.highlights[r][x] = []
         range(gridSize).forEach(y => {
           const highlight = regionGroup.rect(1, 1).center(x, y)
-          highlight.stroke({ color: this.directColor, width: 0.07 })
+          highlight.stroke({
+            color: this.directColor,
+            width: 0.07,
+            linecap: 'square'
+          })
           highlight.fill('none')
           highlight.opacity(0)
           this.highlights[r][x][y] = highlight
@@ -152,6 +187,40 @@ export class Renderer {
           this.tiles[r][x][y] = tile
         })
       })
+    })
+  }
+
+  setupRoundLines (): void {
+    const width = gridSize + this.padding
+    const height = gridSize + this.padding
+    const center = Math.floor(0.5 * gridSize)
+    this.svgs.forEach((svg, r) => {
+      const roundLine = svg.rect(width, height)
+      roundLine.fill({ opacity: 0 })
+      roundLine.stroke({
+        color: this.borderColor,
+        width: 0.06,
+        linecap: 'square'
+      })
+      roundLine.center(center, center)
+      this.roundLines[r] = roundLine
+    })
+  }
+
+  setupEndLines (): void {
+    const width = gridSize + 0.5 * this.padding
+    const height = gridSize + 0.5 * this.padding
+    const center = Math.floor(0.5 * gridSize)
+    this.svgs.forEach((svg, r) => {
+      const endLine = svg.rect(width, height)
+      endLine.fill({ opacity: 0 })
+      endLine.stroke({
+        color: this.borderColor,
+        width: 0.07,
+        linecap: 'square'
+      })
+      endLine.center(center, center)
+      this.endLines[r] = endLine
     })
   }
 
@@ -194,8 +263,8 @@ export class Renderer {
       this.goalGroups[r] = goalGroup
       const startAngle = 0.5 * Math.PI
       const spikes = 5
-      const outerRadius = 0.3
-      const innerRadius = 0.15
+      const outerRadius = 0.25
+      const innerRadius = 0.12
       const starCoordinates: number[] = []
       range(2 * spikes).forEach(i => {
         const angle = startAngle + i * Math.PI / spikes

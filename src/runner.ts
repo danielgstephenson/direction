@@ -1,5 +1,5 @@
 import { choose, range, shuffle, Vec2 } from './math'
-import { gridSize, teamSize } from './params'
+import { gridSize, moveVectors, teamSize } from './params'
 import { Region } from './region'
 import { State } from './state'
 import { Unit } from './unit'
@@ -32,7 +32,7 @@ export class Runner {
   }
 
   getObstacles (region: Region, unit: Unit): Unit[] {
-    const v = this.getVelocity(unit)
+    const v = moveVectors[unit.dir]
     const obstacles: Unit[] = []
     for (const dt of range(1, gridSize)) {
       const xt = unit.x + v.x * dt
@@ -54,13 +54,6 @@ export class Runner {
     return occupants
   }
 
-  getVelocity (unit: Unit): Vec2 {
-    const angle = 0.5 * Math.PI * unit.dir
-    const dx = Math.round(Math.cos(angle))
-    const dy = Math.round(Math.sin(angle))
-    return { x: dx, y: dy }
-  }
-
   getScores (region: Region): number[] {
     const scores = [0, 0]
     region.units.forEach(unit => {
@@ -73,7 +66,7 @@ export class Runner {
   }
 
   isBlocked (region: Region, unit: Unit): boolean {
-    const v = this.getVelocity(unit)
+    const v = moveVectors[unit.dir]
     for (const dt of range(1, gridSize)) {
       const xt = unit.x + v.x * dt
       const yt = unit.y + v.y * dt
@@ -95,7 +88,7 @@ export class Runner {
 
   move (region: Region, unit: Unit): void {
     if (this.isBlocked(region, unit)) return
-    const v = this.getVelocity(unit)
+    const v = moveVectors[unit.dir]
     const obstacles = this.getObstacles(region, unit)
     obstacles.forEach(obstacle => {
       obstacle.x += v.x
