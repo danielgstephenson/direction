@@ -1,7 +1,7 @@
 export class Unit {
-  region: number
   team: number
   rank: number
+  region: number
   x: number
   y: number
   dir: number

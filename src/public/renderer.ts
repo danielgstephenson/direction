@@ -1,7 +1,8 @@
-import { range } from '../math'
+import { range, Vec2 } from '../math'
 import { choiceInterval, endInterval, gridSize, maxRound, moveInterval } from '../params'
 import { State } from '../state'
 import { Tick } from '../tick'
+import { Unit } from '../unit'
 import { Client } from './client'
 import { SVG, G, Rect } from '@svgdotjs/svg.js'
 
@@ -21,6 +22,7 @@ export class Renderer {
   countdown = 0
   phase = 'choice'
   choice = 0
+  focus: Vec2 = { x: 0, y: 0 }
 
   borderColor = 'hsl(0, 0%, 10%)'
   directColor = 'hsl(0, 0%, 70%)'
@@ -99,11 +101,12 @@ export class Renderer {
     this.choice = tick.choice
     this.team = tick.team
     if (this.phase === 'choice') {
-      this.state.regions.forEach(region => {
+      this.state.regions.forEach((region, r) => {
         region.units.forEach(unit => {
           const sameRank = unit.rank === region.moveRank
           const sameTeam = unit.team === this.team
           if (sameRank && sameTeam) {
+            this.updateFocus(unit)
             const unitGroup = this.unitGroups[unit.region][unit.rank]
             const oldTransform = unitGroup.transform()
             unitGroup.transform({
@@ -137,6 +140,20 @@ export class Renderer {
         endLine.attr('stroke-dasharray', `${a} ${b}`)
       })
     }
+  }
+
+  updateFocus (unit: Unit): void {
+    const svg = this.svgs[unit.region]
+    const svgPoint = svg.node.createSVGPoint()
+    svgPoint.x = 0
+    svgPoint.y = 0
+    const unitGroup = this.unitGroups[unit.region][unit.rank]
+    const unitElement = unitGroup.node
+    const transform = unitElement.getScreenCTM()
+    if (transform == null) return
+    const screenPoint = svgPoint.matrixTransform(transform)
+    this.focus.x = screenPoint.x
+    this.focus.y = screenPoint.y
   }
 
   onResize (): void {

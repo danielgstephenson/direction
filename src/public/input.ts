@@ -24,7 +24,16 @@ export class Input {
   }
 
   onmousedown (event: MouseEvent): void {
-    console.log('mousedown', event.button)
+    const focus = this.client.renderer.focus
+    const x = event.clientX - focus.x
+    const y = focus.y - event.clientY
+    let dir = 0
+    if (Math.abs(x) > Math.abs(y)) {
+      dir = x > 0 ? 0 : 2
+    } else {
+      dir = y > 0 ? 1 : 3
+    }
+    this.client.socket.emit('choice', dir)
   }
 
   ontouchstart (event: TouchEvent): void {}
