@@ -210,7 +210,7 @@ export class Renderer {
   setupRoundLines (): void {
     const width = gridSize + this.padding
     const height = gridSize + this.padding
-    const center = Math.floor(0.5 * gridSize)
+    const center = 0.5 * (gridSize - 1)
     this.svgs.forEach((svg, r) => {
       const roundLine = svg.rect(width, height)
       roundLine.fill({ opacity: 0 })
@@ -227,7 +227,7 @@ export class Renderer {
   setupEndLines (): void {
     const width = gridSize + 0.5 * this.padding
     const height = gridSize + 0.5 * this.padding
-    const center = Math.floor(0.5 * gridSize)
+    const center = 0.5 * (gridSize - 1)
     this.svgs.forEach((svg, r) => {
       const endLine = svg.rect(width, height)
       endLine.fill({ opacity: 0 })
@@ -253,15 +253,16 @@ export class Renderer {
         })
         const circle = unitGroup.circle(0.9).center(0, 0).fill(color)
         const square = unitGroup.rect(1, 1).center(0, 0).fill('white')
-        const pointer = unitGroup.rect(0.4, 0.2).center(0.3, 0).fill('black')
+        const pointer = unitGroup.rect(0.4, 0.15).center(0.3, 0).fill('black')
         const mask = unitGroup.mask().add(square).add(pointer)
-        const startAngle = Math.PI * 0.1
-        const endAngle = Math.PI * 1.9
-        const angleStep = (endAngle - startAngle) / (unit.rank + 1)
-        range(unit.rank).forEach(i => {
+        const startAngle = Math.PI * 0.05
+        const endAngle = Math.PI * 1.95
+        const eyes = unit.rank + 1
+        const angleStep = (endAngle - startAngle) / (eyes + 1)
+        range(eyes).forEach(i => {
           const angle = startAngle + angleStep * (i + 1)
-          const x = 0.26 * Math.cos(angle)
-          const y = 0.26 * Math.sin(angle)
+          const x = 0.28 * Math.cos(angle)
+          const y = 0.28 * Math.sin(angle)
           unitGroup.circle(0.14).center(x, y).fill('black')
         })
         circle.maskWith(mask)
