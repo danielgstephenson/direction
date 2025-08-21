@@ -12,6 +12,7 @@ export class Bot {
 
   constructor (game: Game) {
     this.game = game
+    this.maxDepth = game.server.config.depth
   }
 
   getChoice (team: number, state: State): number {
