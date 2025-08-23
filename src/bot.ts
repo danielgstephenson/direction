@@ -1,12 +1,12 @@
 import { Game } from './game'
 import { Region } from './region'
-import { choose, mean, range } from './math'
+import { choose, range } from './math'
 import { State } from './state'
 import { moveVectors } from './params'
 
 export class Bot {
   maxDepth = 6
-  noise = 0.001
+  discount = 0.4
   game: Game
 
   constructor (game: Game) {
@@ -16,9 +16,6 @@ export class Bot {
 
   getChoice (team: number, state: State): number {
     const options = range(4)
-    if (Math.random() < this.noise) {
-      return choose(options)
-    }
     const region = state.regions.find(region => {
       return region.units[region.moveRank].team === team
     })
@@ -57,8 +54,6 @@ export class Bot {
     const nextValues = range(4).map(nextChoice => {
       return this.getValue(team, region, nextChoice, depth - 1)
     })
-    const meanValue = mean(nextValues)
-    const nextValue = this.noise * meanValue + (1 - this.noise) * Math.min(...nextValues)
-    return nextValue
+    return this.discount * Math.min(...nextValues)
   }
 }
