@@ -1,12 +1,13 @@
 import { Game } from './game'
 import { Region } from './region'
-import { choose, range } from './math'
+import { choose, mean, range } from './math'
 import { State } from './state'
 import { moveVectors } from './params'
 
 export class Bot {
   maxDepth = 6
   discount = 0.4
+  noise = 0.001
   game: Game
 
   constructor (game: Game) {
@@ -54,6 +55,8 @@ export class Bot {
     const nextValues = range(4).map(nextChoice => {
       return this.getValue(team, region, nextChoice, depth - 1)
     })
-    return this.discount * Math.min(...nextValues)
+    const meanValue = mean(nextValues)
+    const nextValue = this.noise * meanValue + (1 - this.noise) * Math.min(...nextValues)
+    return this.discount * nextValue
   }
 }
