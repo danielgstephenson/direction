@@ -2,7 +2,7 @@ import { choose, range } from './math'
 import { choiceInterval, maxRound, moveInterval, updateInterval, endInterval } from './params'
 import { Player } from './player'
 import { Server } from './server'
-import { State } from './state'
+import { OldState } from './oldState'
 import { Runner } from './runner'
 import { Tick } from './tick'
 import { Bot } from './bot'
@@ -11,7 +11,7 @@ export class Game {
   token = String(Math.random())
   server = new Server()
   players: Player[] = []
-  state = new State(this.token)
+  state = new OldState(this.token)
   runner = new Runner()
   bot = new Bot(this)
   timeScale: number

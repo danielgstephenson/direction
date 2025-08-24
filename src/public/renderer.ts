@@ -1,8 +1,8 @@
 import { range, Vec2 } from '../math'
 import { choiceInterval, endInterval, gridSize, maxRound, moveInterval } from '../params'
-import { State } from '../state'
+import { OldState } from '../oldState'
 import { Tick } from '../tick'
-import { Unit } from '../unit'
+import { OldUnit } from '../oldUnit'
 import { Client } from './client'
 import { SVG, G, Rect } from '@svgdotjs/svg.js'
 
@@ -16,7 +16,7 @@ export class Renderer {
   tiles: Rect[][][] = []
   unitGroups: G[][] = [[], []]
   goalGroups: G[] = []
-  state: State
+  state: OldState
   padding = 0.5
   team: number = 0
   countdown = 0
@@ -35,13 +35,13 @@ export class Renderer {
 
   constructor (client: Client) {
     this.client = client
-    this.state = new State()
+    this.state = new OldState()
     this.svgs.forEach(svg => svg.addTo('#svgDiv'))
     this.onResize()
     window.addEventListener('resize', () => this.onResize())
   }
 
-  onState (newState: State): void {
+  onState (newState: OldState): void {
     this.updateGrid(newState)
     newState.regions.forEach((region, r) => {
       region.units.forEach((unit, rank) => {
@@ -65,7 +65,7 @@ export class Renderer {
     this.state = newState
   }
 
-  updateGrid (newState: State): void {
+  updateGrid (newState: OldState): void {
     const scores = [0, 0]
     newState.regions.forEach(region => {
       scores[0] += region.scores[0]
@@ -142,7 +142,7 @@ export class Renderer {
     }
   }
 
-  updateFocus (unit: Unit): void {
+  updateFocus (unit: OldUnit): void {
     const svg = this.svgs[unit.region]
     const svgPoint = svg.node.createSVGPoint()
     svgPoint.x = 0
@@ -165,7 +165,7 @@ export class Renderer {
     this.svgDiv.style.flexDirection = direction
   }
 
-  setup (newState: State): void {
+  setup (newState: OldState): void {
     this.setupGrids()
     this.setupRoundLines()
     this.setupEndLines()
@@ -241,7 +241,7 @@ export class Renderer {
     })
   }
 
-  setupUnits (newState: State): void {
+  setupUnits (newState: OldState): void {
     this.svgs.forEach((svg, r) => {
       const region = newState.regions[r]
       region.units.forEach((unit, rank) => {
@@ -271,7 +271,7 @@ export class Renderer {
     })
   }
 
-  setupGoals (newState: State): void {
+  setupGoals (newState: OldState): void {
     this.svgs.forEach((svg, r) => {
       const region = newState.regions[r]
       const goalGroup = svg.group().transform({

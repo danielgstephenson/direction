@@ -1,7 +1,7 @@
 import { Game } from './game'
 import { Region } from './region'
 import { choose, mean, range } from './math'
-import { State } from './state'
+import { OldState } from './oldState'
 import { moveVectors } from './params'
 
 export class Bot {
@@ -15,7 +15,7 @@ export class Bot {
     this.maxDepth = game.server.config.depth
   }
 
-  getChoice (team: number, state: State): number {
+  getChoice (team: number, state: OldState): number {
     const options = range(4)
     const region = state.regions.find(region => {
       return region.units[region.moveRank].team === team

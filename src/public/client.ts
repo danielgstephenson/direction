@@ -2,7 +2,7 @@ import io from 'socket.io-client'
 import { Renderer } from './renderer'
 import { Input } from './input'
 import { Tick } from '../tick'
-import { State } from '../state'
+import { OldState } from '../oldState'
 
 export class Client {
   socket = io()
@@ -14,12 +14,12 @@ export class Client {
     this.socket.on('connected', () => {
       console.log('connected')
     })
-    this.socket.on('setup', (state: State) => {
+    this.socket.on('setup', (state: OldState) => {
       console.log('setup')
       this.checkToken(state.token)
       this.renderer.setup(state)
     })
-    this.socket.on('state', (state: State) => {
+    this.socket.on('state', (state: OldState) => {
       this.checkToken(state.token)
       this.renderer.onState(state)
     })
