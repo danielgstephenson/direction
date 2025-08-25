@@ -19,3 +19,17 @@ export const locations: Vec2[] = range(gridSize).flatMap(x => {
     return { x, y }
   })
 })
+
+export const innerLocations = locations.filter(v => {
+  const center = 0.5 * (gridSize - 1)
+  if (v.x === center && v.y === center) return false
+  const innerX = v.x > 0 && v.x < gridSize - 1
+  const innerY = v.y > 0 && v.y < gridSize - 1
+  return innerX && innerY
+})
+
+export const outerLocations = locations.filter(v => {
+  const innerX = v.x > 0 && v.x < gridSize - 1
+  const innerY = v.y > 0 && v.y < gridSize - 1
+  return !innerX || !innerY
+})

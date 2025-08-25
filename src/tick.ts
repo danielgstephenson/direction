@@ -1,19 +1,28 @@
 import { Game } from './game'
 
 export class Tick {
-  countdown = 0
-  round = 0
-  phase = 'choice'
-  team = 0
-  choice = 0
-  token = ''
+  countdown: number
+  round: number
+  phase: string
+  team: number
+  choice: number
+  rank: number
+  score: number
+  token: string
 
   constructor (game: Game, team: number) {
-    this.countdown = game.countdown
-    this.round = game.state.round
-    this.phase = game.state.phase
     this.team = team
-    this.choice = game.choices[team]
-    this.token = game.token
+    this.countdown = game.countdown
+    this.phase = game.phase
+    const state = game.state
+    this.score = state.score
+    this.round = state.round
+    this.token = state.token
+    this.rank = state.rank
+    if (team === state.team) {
+      this.choice = game.choice
+    } else {
+      this.choice = state.units[state.rank].dir
+    }
   }
 }
