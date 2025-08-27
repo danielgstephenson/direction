@@ -91,7 +91,6 @@ export class Game {
   checkEnd (): void {
     const win = this.state.score !== 0
     const timeOut = this.state.round > maxRound
-    console.log('this.state.score', this.state.score)
     if (win || timeOut) {
       this.phase = 'end'
       this.countdown = endInterval

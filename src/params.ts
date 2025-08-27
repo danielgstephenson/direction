@@ -4,7 +4,7 @@ export const gridSize = 5
 export const unitCount = 6
 export const updateInterval = 0.2
 export const moveInterval = 0.5
-export const choiceInterval = 6
+export const choiceInterval = 4
 export const endInterval = 10
 export const maxRound = 40
 export const moveVectors = [
@@ -21,8 +21,6 @@ export const locations: Vec2[] = range(gridSize).flatMap(x => {
 })
 
 export const innerLocations = locations.filter(v => {
-  const center = 0.5 * (gridSize - 1)
-  if (v.x === center && v.y === center) return false
   const innerX = v.x > 0 && v.x < gridSize - 1
   const innerY = v.y > 0 && v.y < gridSize - 1
   return innerX && innerY

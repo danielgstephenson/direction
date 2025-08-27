@@ -5,6 +5,7 @@ import { Client } from './client'
 import { SVG, G, Rect } from '@svgdotjs/svg.js'
 import { State } from '../state'
 import { Unit } from '../unit'
+import { fiveLine, fourLine, oneLine, sixLine, threeLine, twoLine } from './numbers'
 
 export class Renderer {
   svgDiv = document.getElementById('svgDiv') as HTMLDivElement
@@ -14,6 +15,8 @@ export class Renderer {
   endLines: Rect[] = []
   tiles: Rect[][] = []
   highlights: Rect[][] = []
+  bodyGroups: G[] = []
+  labelGroups: G[] = []
   unitGroups: G[] = []
   goalGroups: G[] = []
   state: State
@@ -44,18 +47,18 @@ export class Renderer {
     newState.units.forEach(unit => {
       const rank = unit.rank
       const unitGroup = this.unitGroups[rank]
-      const oldTransform = unitGroup.transform()
-      unitGroup.transform({
-        translateX: oldTransform.translateX,
-        translateY: oldTransform.translateY,
+      const bodyGroup = this.bodyGroups[rank]
+      bodyGroup.transform({
+        translateX: 0,
+        translateY: 0,
         rotate: 90 * unit.dir
       })
+      const oldTransform = unitGroup.transform()
       const moved = oldTransform.translateX !== unit.x || oldTransform.translateY !== unit.y
       if (moved) {
         unitGroup.animate(800 * moveInterval).transform({
           translateX: unit.x,
-          translateY: unit.y,
-          rotate: 90 * unit.dir
+          translateY: unit.y
         })
       }
     })
@@ -104,16 +107,15 @@ export class Renderer {
       this.state.units.forEach(unit => {
         if (unit.rank === tick.rank) {
           this.updateFocus(unit)
-          const unitGroup = this.unitGroups[unit.rank]
-          const oldTransform = unitGroup.transform()
-          unitGroup.transform({
-            translateX: oldTransform.translateX,
-            translateY: oldTransform.translateY,
+          const bodyGroup = this.bodyGroups[unit.rank]
+          bodyGroup.transform({
+            translateX: 0,
+            translateY: 0,
             rotate: 90 * this.choice
           })
           const highlight = this.highlights[unit.x][unit.y]
           highlight.front()
-          const alpha = unit.team === this.team ? 1 : 0.5
+          const alpha = unit.team === this.team ? 0.7 : 0.3
           highlight.opacity(alpha)
           const a = 4 * tick.countdown / choiceInterval
           const b = 4 - a
@@ -231,25 +233,40 @@ export class Renderer {
       const color = this.teamColors[unit.team]
       const unitGroup = this.svg.group().transform({
         translateX: unit.x,
-        translateY: unit.y,
+        translateY: unit.y
+      })
+      const bodyGroup = unitGroup.group().transform({
+        translateX: 0,
+        translateY: 0,
         rotate: 90 * unit.dir
       })
-      const circle = unitGroup.circle(0.9).center(0, 0).fill(color)
-      const square = unitGroup.rect(1, 1).center(0, 0).fill('white')
-      const pointer = unitGroup.rect(0.4, 0.15).center(0.3, 0).fill('black')
-      const mask = unitGroup.mask().add(square).add(pointer)
-      const startAngle = Math.PI * 0.05
-      const endAngle = Math.PI * 1.95
-      const eyes = unit.rank + 1
-      const angleStep = (endAngle - startAngle) / (eyes + 1)
-      range(eyes).forEach(i => {
-        const angle = startAngle + angleStep * (i + 1)
-        const x = 0.28 * Math.cos(angle)
-        const y = 0.28 * Math.sin(angle)
-        unitGroup.circle(0.14).center(x, y).fill('black')
+      const labelGroup = unitGroup.group().transform({
+        translateX: 0,
+        translateY: 0
       })
-      circle.maskWith(mask)
+      const circle = bodyGroup.circle(0.9).center(0, 0).fill(color)
+      const square = bodyGroup.rect(1, 1).center(0, 0).fill('white')
+      const pointer = bodyGroup.rect(0.2, 0.15).center(0.4, 0).fill('black')
+      const pointerMask = bodyGroup.mask().add(square).add(pointer)
+      circle.maskWith(pointerMask)
+      const labelArray: number[] = []
+      if (rank + 1 === 1) labelArray.push(...oneLine)
+      if (rank + 1 === 2) labelArray.push(...twoLine)
+      if (rank + 1 === 3) labelArray.push(...threeLine)
+      if (rank + 1 === 4) labelArray.push(...fourLine)
+      if (rank + 1 === 5) labelArray.push(...fiveLine)
+      if (rank + 1 === 6) labelArray.push(...sixLine)
+      const label = labelGroup.polyline(labelArray)
+      label.stroke({
+        color: 'black',
+        width: 0.09,
+        linecap: 'round',
+        linejoin: 'round'
+      })
+      label.fill('none')
       this.unitGroups[rank] = unitGroup
+      this.bodyGroups[rank] = bodyGroup
+      this.labelGroups[rank] = labelGroup
     })
   }
 
@@ -261,22 +278,29 @@ export class Renderer {
         translateY: goal.y
       })
       this.goalGroups.push(goalGroup)
-      const startAngle = 0.5 * Math.PI
-      const spikes = 5
-      const outerRadius = 0.25
-      const innerRadius = 0.12
-      const starCoordinates: number[] = []
-      range(2 * spikes).forEach(i => {
-        const angle = startAngle + i * Math.PI / spikes
-        const r = (i % 2 === 0) ? outerRadius : innerRadius
-        const x = r * Math.cos(angle)
-        const y = r * Math.sin(angle)
-        starCoordinates.push(x, y)
-      })
-      goalGroup.polygon(starCoordinates).fill({
+      const circle = goalGroup.circle(0.7).center(0, 0)
+      circle.fill('none')
+      circle.stroke({
         color: this.goalColor,
-        opacity: 0.8
+        width: 0.05,
+        opacity: 0.7
       })
+      // const startAngle = 0.5 * Math.PI
+      // const spikes = 5
+      // const outerRadius = 0.3
+      // const innerRadius = 0.15
+      // const starCoordinates: number[] = []
+      // range(2 * spikes).forEach(i => {
+      //   const angle = startAngle + i * Math.PI / spikes
+      //   const r = (i % 2 === 0) ? outerRadius : innerRadius
+      //   const x = r * Math.cos(angle)
+      //   const y = r * Math.sin(angle)
+      //   starCoordinates.push(x, y)
+      // })
+      // goalGroup.polygon(starCoordinates).fill({
+      //   color: this.goalColor,
+      //   opacity: 0.3
+      // })
     })
   }
 }

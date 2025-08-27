@@ -41,15 +41,17 @@ export function getOccupants (state: State, x: number, y: number): Unit[] {
 }
 
 export function getScore (state: State): number {
-  let score = 0
+  let goals = 0
   state.units.forEach(unit => {
     state.goals.forEach(goal => {
       if (unit.x === goal.x && unit.y === goal.y) {
-        score += unit.team === 0 ? -1 : 1
+        goals += unit.team === 0 ? -1 : 1
       }
     })
   })
-  return score
+  if (goals === -2) return -1
+  if (goals === 2) return 1
+  return 0
 }
 
 export function isOpen (state: State, x: number, y: number): boolean {
@@ -63,12 +65,7 @@ export function isOpen (state: State, x: number, y: number): boolean {
 
 export function reset (state: State): void {
   const inner = shuffle(innerLocations)
-  const goal0 = inner[0]
-  const goal1 = {
-    x: gridSize - 1 - goal0.x,
-    y: gridSize - 1 - goal0.y
-  }
-  state.goals = [goal0, goal1]
+  state.goals = [inner[0], inner[1]]
   const options = shuffle(locations)
   range(unitCount).forEach(rank => {
     const unit = state.units[rank]
@@ -76,5 +73,8 @@ export function reset (state: State): void {
     unit.y = options[rank].y
     unit.dir = choose([0, 1, 2, 3])
   })
+  state.round = 0
+  state.rank = 0
+  state.team = 0
   state.score = getScore(state)
 }
