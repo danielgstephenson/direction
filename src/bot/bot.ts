@@ -23,6 +23,7 @@ export class Bot {
     const sign = Math.sign(value)
     console.log('value', value, sign, rounds)
     this.printHead()
+    console.log('decisionCount', this.decisions.size)
     this.finished = true
   }
 
@@ -84,17 +85,14 @@ export class Bot {
     const depth = this.layers.length
     const maxLayer = this.layers[depth - 1]
     if (maxLayer.length === 0) return
-    if (maxLayer.length > 100000) return
+    if (maxLayer.length > 1000) return
     this.layers[depth] = []
     maxLayer.forEach(decision => {
       if (decision.score !== 0) return
       const oldState = new State()
       setup(oldState, decision.id)
       directions.forEach(dir => {
-        const state = structuredClone(oldState)
-        const unit = state.units[state.rank]
-        unit.dir = dir
-        advance(state)
+        const state = advance(oldState, dir)
         const child = this.addDecision(state, depth)
         decision.children[dir] = child
       })
@@ -102,4 +100,31 @@ export class Bot {
     const layer = this.layers[depth]
     console.log('layer', depth, layer.length)
   }
+}
+
+export function getValue (state: State, depth: number): number {
+  if (state.score !== 0 || depth < 1) return state.score
+  const team0 = state.team === 0
+  const targetScore = team0 ? -1 : 1
+  const values: number[] = []
+  for (const dir of directions) {
+    const next = advance(state, dir)
+    const value = getValue(next, depth - 1)
+    if (next.score === targetScore) return value
+    values.push(value)
+  }
+  return team0 ? Math.min(...values) : Math.max(...values)
+}
+
+export function getChoice (state: State, depth: number): number {
+  const values = directions.map(dir => {
+    const next = advance(state, dir)
+    const value = getValue(next, depth)
+    return value
+  })
+  const maxValue = Math.max(...values)
+  const choices = directions.filter(dir => {
+    return values[dir] === maxValue
+  })
+  return choose(choices)
 }

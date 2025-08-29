@@ -21,17 +21,20 @@ export class State {
     range(2).forEach(i => {
       this.goals[i] = { x: 0, y: 0 }
     })
-    reset(this)
+    resetState(this)
   }
 }
 
-export function advance (state: State): void {
-  const unit = state.units[state.rank]
-  move(state, unit)
-  state.round += 1
-  state.rank = state.round % unitCount
-  state.team = state.rank % 2
-  state.score = getScore(state)
+export function advance (oldState: State, dir: number): State {
+  const newState = structuredClone(oldState)
+  const unit = newState.units[newState.rank]
+  unit.dir = dir
+  move(newState, unit)
+  newState.round += 1
+  newState.rank = newState.round % unitCount
+  newState.team = newState.rank % 2
+  newState.score = getScore(newState)
+  return newState
 }
 
 export function getOccupants (state: State, x: number, y: number): Unit[] {
@@ -67,7 +70,7 @@ export function isOpen (state: State, x: number, y: number): boolean {
   return true
 }
 
-export function reset (state: State): void {
+export function resetState (state: State): void {
   const inner = shuffle(innerLocations)
   range(2).forEach(i => {
     const goal = state.goals[i]
