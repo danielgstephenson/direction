@@ -1,4 +1,4 @@
-import { choose, range } from '../math'
+import { choose, mean, range } from '../math'
 import { directions, discount, maxRound } from '../params'
 import { advance, getStateId, setup, State } from '../state'
 import { Decision } from './decision'
@@ -113,7 +113,10 @@ export function getValue (state: State, depth: number): number {
     if (next.score === targetScore) return value
     values.push(value)
   }
-  return team0 ? Math.min(...values) : Math.max(...values)
+  const meanValue = mean(values)
+  return team0
+    ? Math.min(...values) + 0.001 * meanValue
+    : Math.max(...values) + 0.001 * meanValue
 }
 
 export function getChoice (state: State, depth: number): number {
@@ -122,9 +125,11 @@ export function getChoice (state: State, depth: number): number {
     const value = getValue(next, depth)
     return value
   })
-  const maxValue = Math.max(...values)
+  const optimalValue = state.team === 0
+    ? Math.min(...values)
+    : Math.max(...values)
   const choices = directions.filter(dir => {
-    return values[dir] === maxValue
+    return values[dir] === optimalValue
   })
   return choose(choices)
 }
