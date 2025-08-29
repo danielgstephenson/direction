@@ -32,8 +32,8 @@ export class Renderer {
   goalColor = 'hsl(60, 100%, 50%)'
   tieColor = 'hsl(0, 100%, 20%)'
   teamColors = [
-    'hsl(210, 100%, 40%)',
-    'hsl(120, 75%, 30%)'
+    'hsl(120, 75%, 30%)',
+    'hsl(210, 100%, 40%)'
   ]
 
   constructor (client: Client) {

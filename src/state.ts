@@ -6,6 +6,7 @@ export class State {
   token: string = ''
   units: Unit[] = []
   goals: Vec2[] = []
+  history: string[] = []
   round = 0
   rank = 0
   team = 0
@@ -16,6 +17,9 @@ export class State {
     range(unitCount).forEach(rank => {
       const team = rank % 2
       this.units[rank] = new Unit(team, rank)
+    })
+    range(2).forEach(i => {
+      this.goals[i] = { x: 0, y: 0 }
     })
     reset(this)
   }
@@ -65,7 +69,11 @@ export function isOpen (state: State, x: number, y: number): boolean {
 
 export function reset (state: State): void {
   const inner = shuffle(innerLocations)
-  state.goals = [inner[0], inner[1]]
+  range(2).forEach(i => {
+    const goal = state.goals[i]
+    goal.x = inner[i].x
+    goal.y = inner[i].y
+  })
   const options = shuffle(locations)
   range(unitCount).forEach(rank => {
     const unit = state.units[rank]
@@ -76,5 +84,34 @@ export function reset (state: State): void {
   state.round = 0
   state.rank = 0
   state.team = 0
+  state.score = getScore(state)
+}
+
+export function getStateId (state: State): string {
+  const numbers = [state.rank]
+  state.units.forEach(unit => {
+    numbers.push(unit.x, unit.y)
+  })
+  state.goals.forEach(goal => {
+    numbers.push(goal.x, goal.y)
+  })
+  return JSON.stringify(numbers)
+}
+
+export function setup (state: State, id: string): void {
+  const numbers = JSON.parse(id)
+  if (!Array.isArray(numbers)) {
+    throw new Error(`Invalid id: ${id}`)
+  }
+  state.rank = numbers.shift()
+  state.round = state.rank
+  state.units.forEach(unit => {
+    unit.x = numbers.shift()
+    unit.y = numbers.shift()
+  })
+  state.goals.forEach(goal => {
+    goal.x = numbers.shift()
+    goal.y = numbers.shift()
+  })
   state.score = getScore(state)
 }

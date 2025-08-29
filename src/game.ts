@@ -1,18 +1,15 @@
-import { choose } from './math'
 import { choiceInterval, maxRound, moveInterval, updateInterval, endInterval } from './params'
 import { Player } from './player'
 import { Server } from './server'
-import { Runner } from './runner'
 import { Tick } from './tick'
-import { Bot } from './bot'
-import { advance, reset, State } from './state'
+import { advance, getStateId, reset, State } from './state'
+import { Bot } from './bot/bot'
 
 export class Game {
   server = new Server()
   players: Player[] = []
   state = new State()
-  runner = new Runner()
-  bot = new Bot(this)
+  bot: Bot
   timeScale: number
   countdown = choiceInterval
   paused = true
@@ -20,7 +17,7 @@ export class Game {
   choice = 0
 
   constructor () {
-    this.restart()
+    this.bot = this.restart()
     this.timeScale = this.server.config.timeScale
     this.startIo()
     setInterval(() => this.tick(), updateInterval / this.timeScale * 1000)
@@ -67,6 +64,13 @@ export class Game {
       this.checkEnd()
       this.updatePlayers()
     } else if (this.phase === 'choice') {
+      const playerCount = this.getPlayerCount(state.team)
+      const stateId = getStateId(this.state)
+      this.state.history.push(stateId)
+      console.log('stateId', stateId)
+      if (playerCount === 0) {
+        this.choice = this.bot.direct(this.state)
+      }
       const unit = state.units[state.rank]
       unit.dir = this.choice
       advance(state)
@@ -78,7 +82,7 @@ export class Game {
     }
   }
 
-  restart (): void {
+  restart (): Bot {
     reset(this.state)
     this.phase = 'choice'
     this.countdown = choiceInterval
@@ -86,6 +90,7 @@ export class Game {
     this.choice = this.state.units[0].dir
     this.checkEnd()
     this.updatePlayers()
+    return new Bot(this.state)
   }
 
   checkEnd (): void {
@@ -108,7 +113,7 @@ export class Game {
     const playerCount1 = this.getPlayerCount(1)
     if (playerCount1 > playerCount0) return 0
     if (playerCount0 > playerCount1) return 1
-    return choose([0, 1])
+    return 0 // choose([0, 1])
   }
 
   getPlayerCount (team: number): number {
