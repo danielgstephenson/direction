@@ -3,7 +3,7 @@ import { Player } from './player'
 import { Server } from './server'
 import { Tick } from './tick'
 import { advance, resetState, State } from './state'
-import { Bot, getChoice } from './bot/bot'
+import { Bot, getActionValues, getChoice } from './bot/bot'
 
 export class Game {
   server = new Server()
@@ -57,22 +57,23 @@ export class Game {
   }
 
   step (): void {
-    const state = this.state
     if (this.phase === 'move') {
       this.phase = 'choice'
       this.countdown = choiceInterval
       this.checkEnd()
       this.updatePlayers()
     } else if (this.phase === 'choice') {
-      const playerCount = this.getPlayerCount(state.team)
+      const playerCount = this.getPlayerCount(this.state.team)
       if (playerCount === 0) {
-        console.log('bot', state.round)
+        console.log('bot', this.state.round)
         console.time('bot')
-        this.choice = getChoice(state, 8)
+        this.choice = getChoice(this.state, 6)
         console.timeEnd('bot')
       }
-      this.state = advance(state, this.choice)
-      this.choice = state.units[state.rank].dir
+      this.state = advance(this.state, this.choice)
+      const values = getActionValues(this.state, 0)
+      console.log(this.state.round, values)
+      this.choice = this.state.units[this.state.rank].dir
       this.phase = 'move'
       this.countdown = moveInterval
     } else if (this.phase === 'end') {
@@ -88,7 +89,7 @@ export class Game {
     this.choice = this.state.units[0].dir
     this.checkEnd()
     this.updatePlayers()
-    return new Bot(this.state)
+    return new Bot()
   }
 
   checkEnd (): void {
