@@ -6,6 +6,7 @@ import { Decision } from './decision'
 export class Bot {
   decisions = new Map<string, Decision>()
   layers: Decision[][] = [[]]
+  finished = false
 
   constructor (state: State) {
     this.addDecision(state, 0)
@@ -22,20 +23,17 @@ export class Bot {
     const sign = Math.sign(value)
     console.log('value', value, sign, rounds)
     this.printHead()
+    this.finished = true
   }
 
   printHead (): void {
-    const head = this.layers.slice(0, 3).flatMap(x => x)
-    const headIds = head.map(x => x.id)
-    console.log('headIds', headIds)
+    console.log('headIds', this.layers[0][0].id)
   }
 
   direct (state: State): number {
     const id = getStateId(state)
     const decision = this.decisions.get(id)
-    console.log(`round: ${state.round}`)
     if (decision == null) {
-      this.printHead()
       const lastId = state.history.at(-1)
       if (lastId == null) {
         throw new Error('missing lastId')
@@ -70,6 +68,9 @@ export class Bot {
   }
 
   addDecision (state: State, depth: number): Decision {
+    if (this.finished) {
+      throw new Error('this.finished === true')
+    }
     const id = getStateId(state)
     const old = this.decisions.get(id)
     if (old != null) return old

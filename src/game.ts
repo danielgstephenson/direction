@@ -2,7 +2,7 @@ import { choiceInterval, maxRound, moveInterval, updateInterval, endInterval } f
 import { Player } from './player'
 import { Server } from './server'
 import { Tick } from './tick'
-import { advance, getStateId, reset, State } from './state'
+import { advance, getStateId, reset, setup, State } from './state'
 import { Bot } from './bot/bot'
 
 export class Game {
@@ -67,7 +67,8 @@ export class Game {
       const playerCount = this.getPlayerCount(state.team)
       const stateId = getStateId(this.state)
       this.state.history.push(stateId)
-      console.log('stateId', stateId)
+      console.log(`round: ${state.round} ${stateId}`)
+      this.bot.printHead()
       if (playerCount === 0) {
         this.choice = this.bot.direct(this.state)
       }
@@ -78,12 +79,13 @@ export class Game {
       this.phase = 'move'
       this.countdown = moveInterval
     } else if (this.phase === 'end') {
-      this.restart()
+      this.bot = this.restart()
     }
   }
 
   restart (): Bot {
     reset(this.state)
+    setup(this.state, getStateId(this.state))
     this.phase = 'choice'
     this.countdown = choiceInterval
     this.paused = true
