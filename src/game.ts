@@ -9,6 +9,7 @@ export class Game {
   server = new Server()
   players: Player[] = []
   state = new State()
+  startId = ''
   timeScale: number
   countdown = choiceInterval
   paused = true
@@ -63,7 +64,8 @@ export class Game {
       this.updatePlayers()
     } else if (this.phase === 'choice') {
       const playerCount = this.getPlayerCount(this.state.team)
-      if (playerCount === 0) {
+      // if (playerCount === 0) {
+      if (playerCount > -1) {
         console.time('bot')
         this.choice = getChoice(this.state, 6)
         console.timeEnd('bot')
@@ -79,9 +81,10 @@ export class Game {
 
   restart (): void {
     resetState(this.state)
+    this.startId = this.state.id
     this.phase = 'choice'
     this.countdown = choiceInterval
-    this.paused = true
+    // this.paused = true
     this.choice = this.state.units[0].dir
     this.checkEnd()
     this.updatePlayers()
@@ -91,6 +94,10 @@ export class Game {
     const win = this.state.score !== 0
     const timeOut = this.state.round > maxRound
     if (win || timeOut) {
+      console.log('final round', this.state.round)
+      console.log('score', this.state.score)
+      console.log('startId', this.startId)
+      console.log('')
       this.phase = 'end'
       this.countdown = endInterval
     }

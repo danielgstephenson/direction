@@ -154,7 +154,8 @@ export class Renderer {
 
   onResize (): void {
     const vmin = Math.min(window.innerWidth, window.innerHeight)
-    this.svg.size(0.8 * vmin, 0.8 * vmin)
+    const scale = 0.8
+    this.svg.size(scale * vmin, scale * vmin)
     const direction = window.innerWidth < window.innerHeight ? 'column' : 'row'
     this.svgDiv.style.flexDirection = direction
   }

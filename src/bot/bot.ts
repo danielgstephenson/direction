@@ -10,18 +10,28 @@ export class Bot {
   teams = new Map<string, number>()
   children = new Map<string, string[]>()
   values = new Map<string, number>()
+  state: State
 
   constructor (state: State, depth: number) {
-    console.time('explore')
-    this.explore(state, depth)
-    console.timeEnd('explore')
-    console.log('this.scores.size', this.scores.size)
-    console.time('plan')
+    // console.time('explore')
+    this.setup(state, depth)
+    // console.timeEnd('explore')
+    // console.log('this.scores.size', this.scores.size)
+    // console.time('plan')
     this.plan(depth)
-    console.timeEnd('plan')
+    // console.timeEnd('plan')
+    this.state = state
   }
 
-  explore (state: State, depth: number): void {
+  // expore (state: State, depth: number): void {
+  //   if (depth < 0) return
+  //   this.scores.set(state.id, state.score)
+  //   this.teams.set(state.id, state.team)
+  //   const dir = choose(directions)
+  //   const next = advance(state, dir)
+  // }
+
+  setup (state: State, depth: number): void {
     if (depth < 0) return
     this.scores.set(state.id, state.score)
     this.teams.set(state.id, state.team)
@@ -30,7 +40,7 @@ export class Bot {
       const next = advance(state, dir)
       children[dir] = next.id
       if (this.scores.has(next.id)) return
-      this.explore(next, depth - 1)
+      this.setup(next, depth - 1)
     }
     this.children.set(state.id, children)
   }
@@ -50,23 +60,6 @@ export class Bot {
         this.values.set(id, discount * nextValue)
       })
     })
-  }
-
-  getValue (state: State, depth: number): number {
-    if (state.score !== 0 || depth < 1) return state.score
-    const team0 = state.team === 0
-    const targetScore = team0 ? -1 : 1
-    const values: number[] = []
-    for (const dir of directions) {
-      const next = advance(state, dir)
-      if (next.score === targetScore) {
-        return discount * next.score
-      }
-      const nextValue = this.getValue(next, depth - 1)
-      values.push(nextValue)
-    }
-    const nextValue = team0 ? Math.min(...values) : Math.max(...values)
-    return discount * nextValue
   }
 
   getWorker (): Worker {
@@ -101,9 +94,11 @@ export function getValue (state: State, depth: number): number {
 }
 
 export function getActionValues (state: State, depth: number): number[] {
+  const bot = new Bot(state, depth)
   return directions.map(dir => {
     const next = advance(state, dir)
-    const value = getValue(next, depth)
+    // const value = getValue(next, depth)
+    const value = bot.values.get(next.id) ?? 0
     return value
   })
 }

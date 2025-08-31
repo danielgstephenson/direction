@@ -7,7 +7,6 @@ export class State {
   id = ''
   units: Unit[] = []
   goals: Vec2[] = []
-  history: string[] = []
   round = 0
   rank = 0
   team = 0
@@ -104,7 +103,8 @@ export function getStateId (state: State): string {
   return JSON.stringify(numbers)
 }
 
-export function setup (state: State, id: string): void {
+export function stateFromId (id: string): State {
+  const state = new State()
   const numbers = JSON.parse(id)
   if (!Array.isArray(numbers)) {
     throw new Error(`Invalid id: ${id}`)
@@ -120,4 +120,5 @@ export function setup (state: State, id: string): void {
     goal.y = numbers.shift()
   })
   state.score = getScore(state)
+  return state
 }
