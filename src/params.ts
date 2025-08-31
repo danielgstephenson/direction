@@ -6,7 +6,7 @@ export const updateInterval = 0.2
 export const moveInterval = 0.5
 export const choiceInterval = 3
 export const endInterval = 10
-export const maxRound = 80
+export const maxRound = 72
 export const discount = 0.8
 
 export const moveVectors = [

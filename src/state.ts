@@ -4,6 +4,7 @@ import { move, Unit } from './unit'
 
 export class State {
   token: string = ''
+  id = ''
   units: Unit[] = []
   goals: Vec2[] = []
   history: string[] = []
@@ -34,6 +35,7 @@ export function advance (oldState: State, dir: number): State {
   newState.rank = newState.round % unitCount
   newState.team = newState.rank % 2
   newState.score = getScore(newState)
+  newState.id = getStateId(newState)
   return newState
 }
 
@@ -88,6 +90,7 @@ export function resetState (state: State): void {
   state.rank = 0
   state.team = 0
   state.score = getScore(state)
+  state.id = getStateId(state)
 }
 
 export function getStateId (state: State): string {

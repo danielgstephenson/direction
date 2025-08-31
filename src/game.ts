@@ -3,13 +3,12 @@ import { Player } from './player'
 import { Server } from './server'
 import { Tick } from './tick'
 import { advance, resetState, State } from './state'
-import { Bot, getChoice } from './bot/bot'
+import { getChoice } from './bot/bot'
 
 export class Game {
   server = new Server()
   players: Player[] = []
   state = new State()
-  bot: Bot
   timeScale: number
   countdown = choiceInterval
   paused = true
@@ -17,7 +16,7 @@ export class Game {
   choice = 0
 
   constructor () {
-    this.bot = this.restart()
+    this.restart()
     this.timeScale = this.server.config.timeScale
     this.startIo()
     setInterval(() => this.tick(), updateInterval / this.timeScale * 1000)
@@ -74,11 +73,11 @@ export class Game {
       this.phase = 'move'
       this.countdown = moveInterval
     } else if (this.phase === 'end') {
-      this.bot = this.restart()
+      this.restart()
     }
   }
 
-  restart (): Bot {
+  restart (): void {
     resetState(this.state)
     this.phase = 'choice'
     this.countdown = choiceInterval
@@ -86,7 +85,6 @@ export class Game {
     this.choice = this.state.units[0].dir
     this.checkEnd()
     this.updatePlayers()
-    return new Bot()
   }
 
   checkEnd (): void {

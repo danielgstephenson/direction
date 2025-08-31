@@ -154,7 +154,7 @@ export class Renderer {
 
   onResize (): void {
     const vmin = Math.min(window.innerWidth, window.innerHeight)
-    this.svg.size(vmin, vmin)
+    this.svg.size(0.8 * vmin, 0.8 * vmin)
     const direction = window.innerWidth < window.innerHeight ? 'column' : 'row'
     this.svgDiv.style.flexDirection = direction
   }
@@ -285,22 +285,6 @@ export class Renderer {
         width: 0.05,
         opacity: 0.7
       })
-      // const startAngle = 0.5 * Math.PI
-      // const spikes = 5
-      // const outerRadius = 0.3
-      // const innerRadius = 0.15
-      // const starCoordinates: number[] = []
-      // range(2 * spikes).forEach(i => {
-      //   const angle = startAngle + i * Math.PI / spikes
-      //   const r = (i % 2 === 0) ? outerRadius : innerRadius
-      //   const x = r * Math.cos(angle)
-      //   const y = r * Math.sin(angle)
-      //   starCoordinates.push(x, y)
-      // })
-      // goalGroup.polygon(starCoordinates).fill({
-      //   color: this.goalColor,
-      //   opacity: 0.3
-      // })
     })
   }
 }
