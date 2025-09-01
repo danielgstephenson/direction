@@ -14,11 +14,11 @@ export class Tick {
     this.team = team
     this.countdown = game.countdown
     this.phase = game.phase
-    const state = game.state
-    this.score = state.score
-    this.round = state.round
-    this.token = state.token
-    this.rank = state.rank
+    const layout = game.layout
+    this.score = layout.score
+    this.round = layout.round
+    this.token = layout.token
+    this.rank = layout.rank
     this.choice = game.choice
   }
 }

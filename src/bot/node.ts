@@ -1,6 +1,6 @@
 import { mean, sample } from '../math'
 import { directions, discount } from '../params'
-import { advance, State, stateFromId } from '../state'
+import { advance, Layout, layoutFromId } from '../layout'
 
 export class Node {
   id: string
@@ -10,11 +10,11 @@ export class Node {
   bestDirs: number[] = [0, 1, 2, 3]
   outcomes: Node[] = []
 
-  constructor (state: State) {
-    this.team0 = state.team === 0
-    this.score = state.score
-    this.value = state.score
-    this.id = state.id
+  constructor (layout: Layout) {
+    this.team0 = layout.team === 0
+    this.score = layout.score
+    this.value = layout.score
+    this.id = layout.id
   }
 }
 
@@ -25,16 +25,16 @@ export function explore (nodes: Map<string, Node>, node: Node, depth: number): v
   if (Math.abs(node.score) === 1) return
   if (node.outcomes.length === 0) {
     if (nodes.size > maxMapSize) return
-    const state = stateFromId(node.id)
+    const layout = layoutFromId(node.id)
     directions.forEach(dir => {
-      const outcomeState = advance(state, dir)
-      const data = nodes.get(outcomeState.id)
+      const outcomeLayout = advance(layout, dir)
+      const data = nodes.get(outcomeLayout.id)
       if (data != null) node.outcomes[dir] = data
       if (nodes.size > maxMapSize) return
       if (nodes.size % 10000 === 0) {
         console.log('mapSize', Number((nodes.size / maxMapSize).toFixed(3)))
       }
-      const outcomeNode = new Node(outcomeState)
+      const outcomeNode = new Node(outcomeLayout)
       nodes.set(outcomeNode.id, outcomeNode)
       node.outcomes[dir] = outcomeNode
     })

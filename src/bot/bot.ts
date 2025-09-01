@@ -1,6 +1,6 @@
 import { range } from '../math'
 import { maxRound } from '../params'
-import { State } from '../state'
+import { Layout } from '../layout'
 import { Worker } from 'worker_threads'
 import path from 'path'
 import { explore, Node } from './node'
@@ -10,8 +10,8 @@ export class Bot {
   finished = false
   root: Node
 
-  constructor (state: State) {
-    this.root = new Node(state)
+  constructor (layout: Layout) {
+    this.root = new Node(layout)
     this.nodes.set(this.root.id, this.root)
     this.think()
   }
@@ -27,12 +27,12 @@ export class Bot {
     setTimeout(() => this.think(), 10)
   }
 
-  focus (state: State): void {
-    const data = this.nodes.get(state.id)
+  focus (layout: Layout): void {
+    const data = this.nodes.get(layout.id)
     if (data != null) {
       this.root = data
     } else {
-      const node = new Node(state)
+      const node = new Node(layout)
       this.nodes.set(node.id, node)
       this.root = node
     }

@@ -2,7 +2,7 @@ import { sample, range, shuffle, Vec2 } from './math'
 import { gridSize, innerLocations, locations, unitCount } from './params'
 import { move, Unit } from './unit'
 
-export class State {
+export class Layout {
   token: string = ''
   id = ''
   units: Unit[] = []
@@ -36,26 +36,26 @@ export class State {
     this.rank = 0
     this.team = 0
     this.score = getScore(this)
-    this.id = getStateId(this)
+    this.id = getLayoutId(this)
   }
 }
 
-export function advance (oldState: State, dir: number): State {
-  const newState = structuredClone(oldState)
-  const unit = newState.units[newState.rank]
+export function advance (oldLayout: Layout, dir: number): Layout {
+  const newLayout = structuredClone(oldLayout)
+  const unit = newLayout.units[newLayout.rank]
   unit.dir = dir
-  move(newState, unit)
-  newState.round += 1
-  newState.rank = newState.round % unitCount
-  newState.team = newState.rank % 2
-  newState.score = getScore(newState)
-  newState.id = getStateId(newState)
-  return newState
+  move(newLayout, unit)
+  newLayout.round += 1
+  newLayout.rank = newLayout.round % unitCount
+  newLayout.team = newLayout.rank % 2
+  newLayout.score = getScore(newLayout)
+  newLayout.id = getLayoutId(newLayout)
+  return newLayout
 }
 
-export function getOccupants (state: State, x: number, y: number): Unit[] {
+export function getOccupants (layout: Layout, x: number, y: number): Unit[] {
   const occupants: Unit[] = []
-  for (const unit of state.units) {
+  for (const unit of layout.units) {
     if (unit.x === x && unit.y === y) {
       occupants.push(unit)
     }
@@ -63,10 +63,10 @@ export function getOccupants (state: State, x: number, y: number): Unit[] {
   return occupants
 }
 
-export function getScore (state: State): number {
+export function getScore (layout: Layout): number {
   let goals = 0
-  state.units.forEach(unit => {
-    state.goals.forEach(goal => {
+  layout.units.forEach(unit => {
+    layout.goals.forEach(goal => {
       if (unit.x === goal.x && unit.y === goal.y) {
         goals += unit.team === 0 ? -1 : 1
       }
@@ -77,42 +77,42 @@ export function getScore (state: State): number {
   return 0
 }
 
-export function isOpen (state: State, x: number, y: number): boolean {
+export function isOpen (layout: Layout, x: number, y: number): boolean {
   const s = gridSize - 1
   const outside = x < 0 || y < 0 || x > s || y > s
   if (outside) return false
-  const occupants = getOccupants(state, x, y)
+  const occupants = getOccupants(layout, x, y)
   if (occupants.length > 0) return false
   return true
 }
 
-export function getStateId (state: State): string {
-  const numbers = [state.rank]
-  state.units.forEach(unit => {
+export function getLayoutId (layout: Layout): string {
+  const numbers = [layout.rank]
+  layout.units.forEach(unit => {
     numbers.push(unit.x, unit.y)
   })
-  state.goals.forEach(goal => {
+  layout.goals.forEach(goal => {
     numbers.push(goal.x, goal.y)
   })
   return JSON.stringify(numbers)
 }
 
-export function stateFromId (id: string): State {
-  const state = new State()
+export function layoutFromId (id: string): Layout {
+  const layout = new Layout()
   const numbers = JSON.parse(id)
   if (!Array.isArray(numbers)) {
     throw new Error(`Invalid id: ${id}`)
   }
-  state.rank = numbers.shift()
-  state.round = state.rank
-  state.units.forEach(unit => {
+  layout.rank = numbers.shift()
+  layout.round = layout.rank
+  layout.units.forEach(unit => {
     unit.x = numbers.shift()
     unit.y = numbers.shift()
   })
-  state.goals.forEach(goal => {
+  layout.goals.forEach(goal => {
     goal.x = numbers.shift()
     goal.y = numbers.shift()
   })
-  state.score = getScore(state)
-  return state
+  layout.score = getScore(layout)
+  return layout
 }

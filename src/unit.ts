@@ -1,6 +1,6 @@
 import { range } from './math'
 import { gridSize, moveVectors } from './params'
-import { getOccupants, isOpen, State } from './state'
+import { getOccupants, isOpen, Layout } from './layout'
 
 export class Unit {
   team: number
@@ -15,35 +15,35 @@ export class Unit {
   }
 }
 
-export function getObstacles (state: State, unit: Unit): Unit[] {
+export function getObstacles (layout: Layout, unit: Unit): Unit[] {
   const v = moveVectors[unit.dir]
   const obstacles: Unit[] = []
   for (const dt of range(1, gridSize)) {
     const xt = unit.x + v.x * dt
     const yt = unit.y + v.y * dt
-    const occupants = getOccupants(state, xt, yt)
+    const occupants = getOccupants(layout, xt, yt)
     if (occupants.length === 0) return obstacles
     obstacles.push(...occupants)
   }
   return obstacles
 }
 
-export function isBlocked (state: State, unit: Unit): boolean {
+export function isBlocked (layout: Layout, unit: Unit): boolean {
   const v = moveVectors[unit.dir]
   for (const dt of range(1, gridSize)) {
     const xt = unit.x + v.x * dt
     const yt = unit.y + v.y * dt
-    if (isOpen(state, xt, yt)) {
+    if (isOpen(layout, xt, yt)) {
       return false
     }
   }
   return true
 }
 
-export function move (state: State, unit: Unit): void {
-  if (isBlocked(state, unit)) return
+export function move (layout: Layout, unit: Unit): void {
+  if (isBlocked(layout, unit)) return
   const v = moveVectors[unit.dir]
-  const obstacles = getObstacles(state, unit)
+  const obstacles = getObstacles(layout, unit)
   obstacles.forEach(obstacle => {
     obstacle.x += v.x
     obstacle.y += v.y

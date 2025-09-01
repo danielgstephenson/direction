@@ -3,7 +3,7 @@ import { choiceInterval, endInterval, gridSize, maxRound, moveInterval } from '.
 import { Tick } from '../tick'
 import { Client } from './client'
 import { SVG, G, Rect } from '@svgdotjs/svg.js'
-import { State } from '../state'
+import { Layout } from '../layout'
 import { Unit } from '../unit'
 import { fiveLine, fourLine, oneLine, sixLine, threeLine, twoLine } from './numbers'
 
@@ -19,7 +19,7 @@ export class Renderer {
   labelGroups: G[] = []
   unitGroups: G[] = []
   goalGroups: G[] = []
-  state: State
+  layout: Layout
   padding = 0.5
   team: number = 0
   countdown = 0
@@ -38,13 +38,13 @@ export class Renderer {
 
   constructor (client: Client) {
     this.client = client
-    this.state = new State()
+    this.layout = new Layout()
     this.onResize()
     window.addEventListener('resize', () => this.onResize())
   }
 
-  onState (newState: State): void {
-    newState.units.forEach(unit => {
+  onLayout (newLayout: Layout): void {
+    newLayout.units.forEach(unit => {
       const rank = unit.rank
       const unitGroup = this.unitGroups[rank]
       const bodyGroup = this.bodyGroups[rank]
@@ -62,14 +62,14 @@ export class Renderer {
         })
       }
     })
-    newState.goals.forEach((goal, i) => {
+    newLayout.goals.forEach((goal, i) => {
       const goalGroup = this.goalGroups[i]
       goalGroup.transform({
         translateX: goal.x,
         translateY: goal.y
       })
     })
-    this.state = newState
+    this.layout = newLayout
   }
 
   updateGrid (tick: Tick): void {
@@ -104,7 +104,7 @@ export class Renderer {
     this.choice = tick.choice
     this.team = tick.team
     if (this.phase === 'choice') {
-      this.state.units.forEach(unit => {
+      this.layout.units.forEach(unit => {
         if (unit.rank === tick.rank) {
           this.updateFocus(unit)
           const bodyGroup = this.bodyGroups[unit.rank]
@@ -160,13 +160,13 @@ export class Renderer {
     this.svgDiv.style.flexDirection = direction
   }
 
-  setup (newState: State): void {
+  setup (newLayout: Layout): void {
     this.setupGrids()
     this.setupRoundLines()
     this.setupEndLine()
-    this.setupUnits(newState)
-    this.setupGoals(newState)
-    this.state = newState
+    this.setupUnits(newLayout)
+    this.setupGoals(newLayout)
+    this.layout = newLayout
   }
 
   setupGrids (): void {
@@ -228,8 +228,8 @@ export class Renderer {
     endLine.center(center, center)
   }
 
-  setupUnits (newState: State): void {
-    newState.units.forEach(unit => {
+  setupUnits (newLayout: Layout): void {
+    newLayout.units.forEach(unit => {
       const rank = unit.rank
       const color = this.teamColors[unit.team]
       const unitGroup = this.svg.group().transform({
@@ -271,9 +271,9 @@ export class Renderer {
     })
   }
 
-  setupGoals (newState: State): void {
+  setupGoals (newLayout: Layout): void {
     this.goalGroups = []
-    newState.goals.forEach(goal => {
+    newLayout.goals.forEach(goal => {
       const goalGroup = this.svg.group().transform({
         translateX: goal.x,
         translateY: goal.y
