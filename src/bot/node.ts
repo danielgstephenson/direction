@@ -18,9 +18,10 @@ export class Node {
   }
 }
 
-const maxMapSize = 2 ** 23
+const maxMapSize = 2 ** 20
 
 export function explore (nodes: Map<string, Node>, node: Node, depth: number): void {
+  if (node == null) return
   if (Math.abs(node.score) === 1) return
   if (node.outcomes.length === 0) {
     if (nodes.size > maxMapSize) return
@@ -30,6 +31,9 @@ export function explore (nodes: Map<string, Node>, node: Node, depth: number): v
       const data = nodes.get(outcomeState.id)
       if (data != null) node.outcomes[dir] = data
       if (nodes.size > maxMapSize) return
+      if (nodes.size % 10000 === 0) {
+        console.log('mapSize', Number((nodes.size / maxMapSize).toFixed(3)))
+      }
       const outcomeNode = new Node(outcomeState)
       nodes.set(outcomeNode.id, outcomeNode)
       node.outcomes[dir] = outcomeNode

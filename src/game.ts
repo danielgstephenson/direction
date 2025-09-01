@@ -89,7 +89,6 @@ export class Game {
   }
 
   restart (): void {
-    this.bot.finished = true
     this.state = this.nextState
     this.bot = this.nextBot
     this.nextState = new State()
@@ -109,6 +108,7 @@ export class Game {
       console.log('final round', this.state.round)
       console.log('score', this.state.score)
       this.phase = 'end'
+      this.bot.finished = true
       this.countdown = endInterval
     }
   }

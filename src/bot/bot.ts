@@ -20,7 +20,10 @@ export class Bot {
     range(50).forEach(_ => {
       explore(this.nodes, this.root, maxRound)
     })
-    if (this.finished) return
+    if (this.finished) {
+      this.nodes.clear()
+      return
+    }
     setTimeout(() => this.think(), 10)
   }
 
