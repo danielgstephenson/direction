@@ -19,10 +19,6 @@ export class Tick {
     this.round = state.round
     this.token = state.token
     this.rank = state.rank
-    if (team === state.team) {
-      this.choice = game.choice
-    } else {
-      this.choice = state.units[state.rank].dir
-    }
+    this.choice = game.choice
   }
 }

@@ -1,4 +1,4 @@
-import { choose, range, shuffle, Vec2 } from './math'
+import { sample, range, shuffle, Vec2 } from './math'
 import { gridSize, innerLocations, locations, unitCount } from './params'
 import { move, Unit } from './unit'
 
@@ -18,10 +18,25 @@ export class State {
       const team = rank % 2
       this.units[rank] = new Unit(team, rank)
     })
-    range(2).forEach(i => {
-      this.goals[i] = { x: 0, y: 0 }
+    const options = shuffle(locations)
+    range(unitCount).forEach(rank => {
+      const unit = this.units[rank]
+      unit.x = options[rank].x
+      unit.y = options[rank].y
+      unit.dir = sample([0, 1, 2, 3])
     })
-    resetState(this)
+    const inner = shuffle(innerLocations)
+    range(2).forEach(i => {
+      this.goals[i] = {
+        x: inner[i].x,
+        y: inner[i].y
+      }
+    })
+    this.round = 0
+    this.rank = 0
+    this.team = 0
+    this.score = getScore(this)
+    this.id = getStateId(this)
   }
 }
 
@@ -69,27 +84,6 @@ export function isOpen (state: State, x: number, y: number): boolean {
   const occupants = getOccupants(state, x, y)
   if (occupants.length > 0) return false
   return true
-}
-
-export function resetState (state: State): void {
-  const inner = shuffle(innerLocations)
-  range(2).forEach(i => {
-    const goal = state.goals[i]
-    goal.x = inner[i].x
-    goal.y = inner[i].y
-  })
-  const options = shuffle(locations)
-  range(unitCount).forEach(rank => {
-    const unit = state.units[rank]
-    unit.x = options[rank].x
-    unit.y = options[rank].y
-    unit.dir = choose([0, 1, 2, 3])
-  })
-  state.round = 0
-  state.rank = 0
-  state.team = 0
-  state.score = getScore(state)
-  state.id = getStateId(state)
 }
 
 export function getStateId (state: State): string {

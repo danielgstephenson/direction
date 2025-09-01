@@ -2,21 +2,27 @@ import { choiceInterval, maxRound, moveInterval, updateInterval, endInterval } f
 import { Player } from './player'
 import { Server } from './server'
 import { Tick } from './tick'
-import { advance, resetState, State } from './state'
-import { getChoice } from './bot/bot'
+import { advance, State } from './state'
+import { Bot } from './bot/bot'
+import { sample } from './math'
 
 export class Game {
   server = new Server()
   players: Player[] = []
   state = new State()
-  startId = ''
+  nextState = new State()
+  bot: Bot
+  nextBot: Bot
   timeScale: number
   countdown = choiceInterval
   paused = true
   phase = 'choice'
   choice = 0
+  botCountdown = 0
 
   constructor () {
+    this.bot = new Bot(this.state)
+    this.nextBot = new Bot(this.nextState)
     this.restart()
     this.timeScale = this.server.config.timeScale
     this.startIo()
@@ -51,6 +57,15 @@ export class Game {
     })
     if (this.paused) return
     this.countdown = Math.max(0, this.countdown - updateInterval)
+    const playerCount = this.getPlayerCount(this.state.team)
+    if (playerCount === 0) {
+      if (this.botCountdown > 0.5) {
+        this.choice = sample(this.bot.root.bestDirs)
+        this.botCountdown = 0
+      } else {
+        this.botCountdown += updateInterval
+      }
+    }
     if (this.countdown === 0) {
       this.step()
     }
@@ -63,14 +78,8 @@ export class Game {
       this.checkEnd()
       this.updatePlayers()
     } else if (this.phase === 'choice') {
-      const playerCount = this.getPlayerCount(this.state.team)
-      // if (playerCount === 0) {
-      if (playerCount > -1) {
-        console.time('bot')
-        this.choice = getChoice(this.state, 6)
-        console.timeEnd('bot')
-      }
       this.state = advance(this.state, this.choice)
+      this.bot.focus(this.state)
       this.choice = this.state.units[this.state.rank].dir
       this.phase = 'move'
       this.countdown = moveInterval
@@ -80,11 +89,14 @@ export class Game {
   }
 
   restart (): void {
-    resetState(this.state)
-    this.startId = this.state.id
+    this.bot.finished = true
+    this.state = this.nextState
+    this.bot = this.nextBot
+    this.nextState = new State()
+    this.nextBot = new Bot(this.nextState)
     this.phase = 'choice'
     this.countdown = choiceInterval
-    // this.paused = true
+    this.paused = true
     this.choice = this.state.units[0].dir
     this.checkEnd()
     this.updatePlayers()
@@ -96,8 +108,6 @@ export class Game {
     if (win || timeOut) {
       console.log('final round', this.state.round)
       console.log('score', this.state.score)
-      console.log('startId', this.startId)
-      console.log('')
       this.phase = 'end'
       this.countdown = endInterval
     }
@@ -114,7 +124,7 @@ export class Game {
     const playerCount1 = this.getPlayerCount(1)
     if (playerCount1 > playerCount0) return 0
     if (playerCount0 > playerCount1) return 1
-    return 0 // choose([0, 1])
+    return sample([0, 1])
   }
 
   getPlayerCount (team: number): number {
