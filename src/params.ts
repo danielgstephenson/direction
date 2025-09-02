@@ -24,6 +24,8 @@ export const gridVecs: Vec2[] = range(gridSize).flatMap(x => {
   })
 })
 
+export const gridLocs = range(gridVecs.length)
+
 export const innerGridVecs = gridVecs.filter(v => {
   const innerX = v.x > 0 && v.x < gridSize - 1
   const innerY = v.y > 0 && v.y < gridSize - 1

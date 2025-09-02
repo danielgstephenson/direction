@@ -1,10 +1,10 @@
-import { choiceInterval, maxRound, moveInterval, updateInterval, endInterval } from './params'
+import { choiceInterval, maxRound, moveInterval, updateInterval, endInterval, gridVecs, unitCount, actionSpace } from './params'
 import { Player } from './player'
 import { Server } from './server'
 import { Tick } from './tick'
 import { advance, Layout } from './layout'
-import { sample } from './math'
-import { getOutcome, maxState, shift } from './state'
+import { range, sample, shuffle } from './math'
+import { getOutcome, locsToState, shift, stateToLocs } from './state'
 
 export class Game {
   server = new Server()
@@ -24,14 +24,24 @@ export class Game {
     setInterval(() => this.tick(), updateInterval / this.timeScale * 1000)
     console.log('shift[0][0]', shift[0][0])
     console.log('game')
-    // const values = new Uint8Array(maxState)
-    // console.log('begin test', maxState)
-    // console.log('maxState', maxState)
-    // values.forEach((i, state) => {
-    //   const outcome = getOutcome(state, 0)
-    //   values[state] = outcome % 5
-    //   if (state % 10000 === 0) console.log((state / maxState).toFixed(4))
-    // })
+    range(1).forEach(_ => {
+      console.log('')
+      const locs = shuffle(range(gridVecs.length)).slice(0, unitCount)
+      const vectors = locs.map(loc => gridVecs[loc])
+      console.log('vectors', vectors)
+      console.log('locs', locs)
+      const state = locsToState(locs)
+      console.log('state', state)
+      const action = sample(actionSpace)
+      console.log('action', action)
+      const outcome = getOutcome(state, action)
+      console.log('outcome', outcome)
+      const locs2 = stateToLocs(outcome)
+      console.log('locs', locs2)
+      const vectors2 = locs2.map(loc => gridVecs[loc])
+      console.log('vectors', vectors2)
+      console.log('')
+    })
   }
 
   startIo (): void {

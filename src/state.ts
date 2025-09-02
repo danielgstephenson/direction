@@ -47,7 +47,7 @@ export function getOutcome (state: number, action: number): number {
   console.log('check', gridVecs[oldLoc])
   for (let step = 0; step < 6; step++) {
     const nextLoc = shift[oldLoc][action]
-    if (nextLoc === oldLoc) return state
+    if (nextLoc === oldLoc) break
     console.log('check', gridVecs[nextLoc])
     const obstacle = locs.findIndex(loc => loc === nextLoc)
     if (obstacle < 0) {
