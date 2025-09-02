@@ -1,5 +1,5 @@
 import { range } from './math'
-import { gridSize, moveVectors } from './params'
+import { gridSize, actionVecs } from './params'
 import { getOccupants, isOpen, Layout } from './layout'
 
 export class Unit {
@@ -16,7 +16,7 @@ export class Unit {
 }
 
 export function getObstacles (layout: Layout, unit: Unit): Unit[] {
-  const v = moveVectors[unit.dir]
+  const v = actionVecs[unit.dir]
   const obstacles: Unit[] = []
   for (const dt of range(1, gridSize)) {
     const xt = unit.x + v.x * dt
@@ -29,7 +29,7 @@ export function getObstacles (layout: Layout, unit: Unit): Unit[] {
 }
 
 export function isBlocked (layout: Layout, unit: Unit): boolean {
-  const v = moveVectors[unit.dir]
+  const v = actionVecs[unit.dir]
   for (const dt of range(1, gridSize)) {
     const xt = unit.x + v.x * dt
     const yt = unit.y + v.y * dt
@@ -42,7 +42,7 @@ export function isBlocked (layout: Layout, unit: Unit): boolean {
 
 export function move (layout: Layout, unit: Unit): void {
   if (isBlocked(layout, unit)) return
-  const v = moveVectors[unit.dir]
+  const v = actionVecs[unit.dir]
   const obstacles = getObstacles(layout, unit)
   obstacles.forEach(obstacle => {
     obstacle.x += v.x

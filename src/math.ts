@@ -13,9 +13,19 @@ export function sum (array: number[]): number {
   return total
 }
 
+export function product (array: number[]): number {
+  let result = 1
+  array.forEach(x => { result = result * x })
+  return result
+}
+
 export function mean (array: number[]): number {
   if (array.length === 0) return 0
   return sum(array) / array.length
+}
+
+export function clamp (x: number, a: number, b: number): number {
+  return Math.max(a, Math.min(b, x))
 }
 
 export interface Vec2 {

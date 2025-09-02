@@ -1,5 +1,5 @@
 import { mean, sample } from '../math'
-import { directions, discount } from '../params'
+import { actionSpace, discount } from '../params'
 import { advance, Layout, layoutFromId } from '../layout'
 
 export class Node {
@@ -26,7 +26,7 @@ export function explore (nodes: Map<string, Node>, node: Node, depth: number): v
   if (node.outcomes.length === 0) {
     if (nodes.size > maxMapSize) return
     const layout = layoutFromId(node.id)
-    directions.forEach(dir => {
+    actionSpace.forEach(dir => {
       const outcomeLayout = advance(layout, dir)
       const data = nodes.get(outcomeLayout.id)
       if (data != null) node.outcomes[dir] = data
@@ -46,13 +46,13 @@ export function explore (nodes: Map<string, Node>, node: Node, depth: number): v
   const meanValue = mean(nextValues)
   const nextValue = bestValue + 0.001 * meanValue
   node.value = discount * nextValue
-  node.bestDirs = directions.filter(dir => {
+  node.bestDirs = actionSpace.filter(dir => {
     return nextValues[dir] === bestValue
   })
   if (depth < 0) return
   const dir = Math.random() < 0.8
     ? sample(node.bestDirs)
-    : sample(directions)
+    : sample(actionSpace)
   const outcomeNode = node.outcomes[dir]
   explore(nodes, outcomeNode, depth - 1)
 }

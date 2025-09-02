@@ -9,28 +9,28 @@ export const endInterval = 5 // 10
 export const maxRound = 48
 export const discount = 0.8
 
-export const moveVectors = [
+export const actionVecs = [
   { x: 1, y: 0 },
   { x: 0, y: 1 },
   { x: -1, y: 0 },
   { x: 0, y: -1 }
 ]
 
-export const directions = [0, 1, 2, 3]
+export const actionSpace = [0, 1, 2, 3]
 
-export const locations: Vec2[] = range(gridSize).flatMap(x => {
+export const gridVecs: Vec2[] = range(gridSize).flatMap(x => {
   return range(gridSize).map(y => {
     return { x, y }
   })
 })
 
-export const innerLocations = locations.filter(v => {
+export const innerGridVecs = gridVecs.filter(v => {
   const innerX = v.x > 0 && v.x < gridSize - 1
   const innerY = v.y > 0 && v.y < gridSize - 1
   return innerX && innerY
 })
 
-export const outerLocations = locations.filter(v => {
+export const outerGridVecs = gridVecs.filter(v => {
   const innerX = v.x > 0 && v.x < gridSize - 1
   const innerY = v.y > 0 && v.y < gridSize - 1
   return !innerX || !innerY

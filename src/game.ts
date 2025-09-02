@@ -3,16 +3,13 @@ import { Player } from './player'
 import { Server } from './server'
 import { Tick } from './tick'
 import { advance, Layout } from './layout'
-import { Bot } from './bot/bot'
 import { sample } from './math'
+import { getOutcome, maxState, shift } from './state'
 
 export class Game {
   server = new Server()
   players: Player[] = []
   layout = new Layout()
-  nextLayout = new Layout()
-  bot: Bot
-  nextBot: Bot
   timeScale: number
   countdown = choiceInterval
   paused = true
@@ -21,12 +18,20 @@ export class Game {
   botCountdown = 0
 
   constructor () {
-    this.bot = new Bot(this.layout)
-    this.nextBot = new Bot(this.nextLayout)
     this.restart()
     this.timeScale = this.server.config.timeScale
     this.startIo()
     setInterval(() => this.tick(), updateInterval / this.timeScale * 1000)
+    console.log('shift[0][0]', shift[0][0])
+    console.log('game')
+    // const values = new Uint8Array(maxState)
+    // console.log('begin test', maxState)
+    // console.log('maxState', maxState)
+    // values.forEach((i, state) => {
+    //   const outcome = getOutcome(state, 0)
+    //   values[state] = outcome % 5
+    //   if (state % 10000 === 0) console.log((state / maxState).toFixed(4))
+    // })
   }
 
   startIo (): void {
@@ -57,15 +62,6 @@ export class Game {
     })
     if (this.paused) return
     this.countdown = Math.max(0, this.countdown - updateInterval)
-    const playerCount = this.getPlayerCount(this.layout.team)
-    if (playerCount === 0) {
-      if (this.botCountdown > 0.5) {
-        this.choice = sample(this.bot.root.bestDirs)
-        this.botCountdown = 0
-      } else {
-        this.botCountdown += updateInterval
-      }
-    }
     if (this.countdown === 0) {
       this.step()
     }
@@ -79,7 +75,6 @@ export class Game {
       this.updatePlayers()
     } else if (this.phase === 'choice') {
       this.layout = advance(this.layout, this.choice)
-      this.bot.focus(this.layout)
       this.choice = this.layout.units[this.layout.rank].dir
       this.phase = 'move'
       this.countdown = moveInterval
@@ -89,10 +84,7 @@ export class Game {
   }
 
   restart (): void {
-    this.layout = this.nextLayout
-    this.bot = this.nextBot
-    this.nextLayout = new Layout()
-    this.nextBot = new Bot(this.nextLayout)
+    this.layout = new Layout()
     this.phase = 'choice'
     this.countdown = choiceInterval
     this.paused = true
@@ -108,7 +100,6 @@ export class Game {
       console.log('final round', this.layout.round)
       console.log('score', this.layout.score)
       this.phase = 'end'
-      this.bot.finished = true
       this.countdown = endInterval
     }
   }

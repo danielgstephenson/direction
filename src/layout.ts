@@ -1,5 +1,5 @@
 import { sample, range, shuffle, Vec2 } from './math'
-import { gridSize, innerLocations, locations, unitCount } from './params'
+import { gridSize, innerGridVecs, gridVecs, unitCount } from './params'
 import { move, Unit } from './unit'
 
 export class Layout {
@@ -18,14 +18,14 @@ export class Layout {
       const team = rank % 2
       this.units[rank] = new Unit(team, rank)
     })
-    const options = shuffle(locations)
+    const options = shuffle(gridVecs)
     range(unitCount).forEach(rank => {
       const unit = this.units[rank]
       unit.x = options[rank].x
       unit.y = options[rank].y
       unit.dir = sample([0, 1, 2, 3])
     })
-    const inner = shuffle(innerLocations)
+    const inner = shuffle(innerGridVecs)
     range(2).forEach(i => {
       this.goals[i] = {
         x: inner[i].x,
