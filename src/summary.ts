@@ -1,7 +1,7 @@
 import { Game } from './game'
 import { randInt, range, sample } from './math'
-import { actionSpace, choiceInterval, endInterval, maxRound } from './params'
-import { stateCount, stateToLocs } from './state'
+import { actionSpace, choiceInterval, endInterval, maxRound, moveInterval, unitCount } from './params'
+import { getOutcome, stateCount, stateToLocs } from './state'
 
 export class Summary {
   token: string
@@ -20,6 +20,18 @@ export class Summary {
     this.goals = [12, 17]
     this.round = 0
   }
+}
+
+export function advance (summary: Summary): void {
+  const oldRank = summary.round % unitCount
+  summary.directions[oldRank] = summary.choice
+  summary.state = getOutcome(summary.state, summary.choice)
+  summary.round += 1
+  summary.phase = 'move'
+  summary.countdown = moveInterval
+  const newRank = summary.round % unitCount
+  summary.choice = summary.directions[newRank]
+  checkEnd(summary)
 }
 
 export function checkEnd (summary: Summary): void {

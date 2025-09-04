@@ -1,9 +1,8 @@
-import { choiceInterval, moveInterval, updateInterval, unitCount } from './params'
+import { choiceInterval, updateInterval } from './params'
 import { Player } from './player'
 import { Server } from './server'
 import { sample } from './math'
-import { getOutcome } from './state'
-import { checkEnd, Summary } from './summary'
+import { advance, checkEnd, Summary } from './summary'
 
 export class Game {
   token = String(Math.random())
@@ -73,18 +72,10 @@ export class Game {
       this.summary.phase = 'choice'
       this.summary.countdown = choiceInterval
     } else if (this.summary.phase === 'choice') {
-      const oldRank = this.summary.round % unitCount
-      this.summary.directions[oldRank] = this.summary.choice
-      this.summary.state = getOutcome(this.summary.state, this.summary.choice)
-      this.summary.round += 1
-      this.summary.phase = 'move'
-      this.summary.countdown = moveInterval
-      const newRank = this.summary.round % unitCount
-      this.summary.choice = this.summary.directions[newRank]
+      advance(this.summary)
       this.players.forEach(player => {
         player.socket.emit('move', this.summary)
       })
-      checkEnd(this.summary)
     } else if (this.summary.phase === 'end') {
       this.summary = new Summary(this)
       this.paused = true
