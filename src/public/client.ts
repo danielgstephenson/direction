@@ -1,8 +1,7 @@
 import io from 'socket.io-client'
 import { Renderer } from './renderer'
 import { Input } from './input'
-import { Tick } from '../tick'
-import { Layout } from '../layout'
+import { Summary } from '../summary'
 
 export class Client {
   socket = io()
@@ -14,24 +13,20 @@ export class Client {
     this.socket.on('connected', () => {
       console.log('connected')
     })
-    this.socket.on('setup', (layout: Layout) => {
-      console.log('setup')
-      this.checkToken(layout.token)
-      this.renderer.setup(layout)
+    this.socket.on('tick', (summary: Summary, team: number) => {
+      this.checkToken(summary.token)
+      this.renderer.onTick(summary, team)
     })
-    this.socket.on('layout', (layout: Layout) => {
-      this.checkToken(layout.token)
-      this.renderer.onLayout(layout)
-    })
-    this.socket.on('tick', (tick: Tick) => {
-      this.checkToken(tick.token)
-      this.renderer.onTick(tick)
+    this.socket.on('move', (summary: Summary) => {
+      this.checkToken(summary.token)
+      this.renderer.onMove(summary)
     })
   }
 
   checkToken (token: string): void {
     const reloadNeeded = !['', token].includes(this.token)
     if (reloadNeeded) {
+      console.log('reloadNeeded', this.token, token)
       this.renderer.svgDiv.style.display = 'none'
       location.reload()
     }

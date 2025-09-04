@@ -5,7 +5,6 @@ export class Config {
   port = 3000
   secure = false
   timeScale = 1
-  depth = 6
 
   constructor () {
     const dirname = path.dirname(__filename)
@@ -16,11 +15,9 @@ export class Config {
       if (typeof json.port === 'number') this.port = json.port
       if (typeof json.secure === 'boolean') this.secure = json.secure
       if (typeof json.timeScale === 'number') this.timeScale = json.timeScale
-      if (typeof json.depth === 'number') this.depth = json.depth
     }
     console.log('port:', this.port)
     console.log('secure:', this.secure)
     console.log('timeScale:', this.timeScale)
-    console.log('depth:', this.depth)
   }
 }

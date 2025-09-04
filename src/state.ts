@@ -1,6 +1,6 @@
 import { console } from 'inspector'
 import { clamp, product, range } from './math'
-import { gridVecs, actionVecs, unitCount } from './params'
+import { gridVecs, actionVecs, unitCount, gridLocs } from './params'
 
 export const shift = gridVecs.map(oldVec => {
   return actionVecs.map((actionVec, i) => {
@@ -13,7 +13,7 @@ export const shift = gridVecs.map(oldVec => {
 })
 
 export function stateToLocs (state: number): number[] {
-  const options = range(gridVecs.length)
+  const options = [...gridLocs]
   let s = state
   return range(unitCount).map(_ => {
     const i = s % options.length
@@ -22,12 +22,12 @@ export function stateToLocs (state: number): number[] {
   })
 }
 
-const optionCounts = range(unitCount).map(r => {
+export const locOptionCounts = range(unitCount).map(r => {
   return gridVecs.length - r
 })
-export const maxState = product(optionCounts)
-const coefficients = range(unitCount).map(i => {
-  return product(optionCounts.slice(0, i))
+export const stateCount = product(locOptionCounts)
+export const coefficients = range(unitCount).map(i => {
+  return product(locOptionCounts.slice(0, i))
 })
 export function locsToState (locs: number[]): number {
   const options = range(gridVecs.length)
@@ -42,12 +42,15 @@ export function locsToState (locs: number[]): number {
 
 export function getOutcome (state: number, action: number): number {
   const locs = stateToLocs(state)
-  const movers = [0]
+  let movers = [0]
   let oldLoc = locs[0]
   console.log('check', gridVecs[oldLoc])
   for (let step = 0; step < 6; step++) {
     const nextLoc = shift[oldLoc][action]
-    if (nextLoc === oldLoc) break
+    if (nextLoc === oldLoc) {
+      movers = []
+      break
+    }
     console.log('check', gridVecs[nextLoc])
     const obstacle = locs.findIndex(loc => loc === nextLoc)
     if (obstacle < 0) {
@@ -67,40 +70,3 @@ export function getOutcome (state: number, action: number): number {
   locs.push(actorLoc)
   return locsToState(locs)
 }
-
-// range(1).forEach(_ => {
-//   console.log('')
-//   const locs = shuffle(range(gridVecs.length)).slice(0, unitCount)
-//   const vectors = locs.map(loc => gridVecs[loc])
-//   console.log('vectors', vectors)
-//   console.log('locs', locs)
-//   const state = locsToState(locs)
-//   console.log('state', state)
-//   const action = sample(actionSpace)
-//   console.log('action', action)
-//   const outcome = getOutcome(state, action)
-//   console.log('outcome', outcome)
-//   const locs2 = stateToLocs(outcome)
-//   console.log('locs', locs2)
-//   const vectors2 = locs2.map(loc => gridVecs[loc])
-//   console.log('vectors', vectors2)
-//   console.log('')
-// })
-
-// const values = new Uint8Array(maxState)
-// console.log('begin test', maxState)
-// values.forEach((i, state) => {
-//   const outcome = getOutcome(state, 0)
-//   values[state] = outcome % 5
-//   if (i % 10000 === 0) console.log((i / maxState).toFixed(4))
-// })
-
-// range(10).forEach(i => {
-//   console.log('')
-//   const locs = shuffle(range(gridVecs.length)).slice(0, unitCount)
-//   console.log('locs', i, locs)
-//   const state = locsToState(locs)
-//   console.log('state', i, state)
-//   const locs2 = stateToLocs(state)
-//   console.log('locs', i, locs2)
-// })

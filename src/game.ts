@@ -1,47 +1,41 @@
-import { choiceInterval, maxRound, moveInterval, updateInterval, endInterval, gridVecs, unitCount, actionSpace } from './params'
+import { choiceInterval, moveInterval, updateInterval, unitCount } from './params'
 import { Player } from './player'
 import { Server } from './server'
-import { Tick } from './tick'
-import { advance, Layout } from './layout'
-import { range, sample, shuffle } from './math'
-import { getOutcome, locsToState, shift, stateToLocs } from './state'
+import { sample } from './math'
+import { getOutcome } from './state'
+import { checkEnd, Summary } from './summary'
 
 export class Game {
+  token = String(Math.random())
   server = new Server()
   players: Player[] = []
-  layout = new Layout()
+  summary = new Summary(this)
   timeScale: number
-  countdown = choiceInterval
   paused = true
-  phase = 'choice'
-  choice = 0
-  botCountdown = 0
 
   constructor () {
-    this.restart()
     this.timeScale = this.server.config.timeScale
     this.startIo()
     setInterval(() => this.tick(), updateInterval / this.timeScale * 1000)
-    console.log('shift[0][0]', shift[0][0])
-    console.log('game')
-    range(1).forEach(_ => {
-      console.log('')
-      const locs = shuffle(range(gridVecs.length)).slice(0, unitCount)
-      const vectors = locs.map(loc => gridVecs[loc])
-      console.log('vectors', vectors)
-      console.log('locs', locs)
-      const state = locsToState(locs)
-      console.log('state', state)
-      const action = sample(actionSpace)
-      console.log('action', action)
-      const outcome = getOutcome(state, action)
-      console.log('outcome', outcome)
-      const locs2 = stateToLocs(outcome)
-      console.log('locs', locs2)
-      const vectors2 = locs2.map(loc => gridVecs[loc])
-      console.log('vectors', vectors2)
-      console.log('')
-    })
+    checkEnd(this.summary)
+    // range(1).forEach(_ => {
+    //   console.log('')
+    //   const state = 5
+    //   console.log('state', state)
+    //   const locs = stateToLocs(state)
+    //   console.log('locs', locs)
+    //   const vectors = locs.map(loc => gridVecs[loc])
+    //   console.log('vectors', vectors)
+    //   const action = 2
+    //   console.log('action', action)
+    //   const outcome = getOutcome(state, action)
+    //   console.log('outcome', outcome)
+    //   const locs2 = stateToLocs(outcome)
+    //   console.log('locs', locs2)
+    //   const vectors2 = locs2.map(loc => gridVecs[loc])
+    //   console.log('vectors', vectors2)
+    //   console.log('')
+    // })
   }
 
   startIo (): void {
@@ -49,14 +43,13 @@ export class Game {
       const player = new Player(this, socket)
       this.players.push(player)
       console.log('connect:', socket.id, this.players.length)
-      socket.emit('connected', this.layout.token)
-      socket.emit('setup', this.layout)
       socket.on('choice', (choice: number) => {
         this.paused = false
-        const choicePhase = this.phase === 'choice'
-        const activeTeam = player.team === this.layout.team
-        if (choicePhase && activeTeam) {
-          this.choice = choice
+        const choicePhase = this.summary.phase === 'choice'
+        const activeTeam = this.summary.round % 2
+        const activePlayer = player.team === activeTeam
+        if (choicePhase && activePlayer) {
+          this.summary.choice = choice
         }
       })
       socket.on('disconnect', () => {
@@ -68,56 +61,37 @@ export class Game {
 
   tick (): void {
     this.players.forEach(player => {
-      player.socket.emit('tick', new Tick(this, player.team))
+      player.socket.emit('tick', this.summary, player.team)
     })
     if (this.paused) return
-    this.countdown = Math.max(0, this.countdown - updateInterval)
-    if (this.countdown === 0) {
-      this.step()
-    }
+    this.summary.countdown = Math.max(0, this.summary.countdown - updateInterval)
+    if (this.summary.countdown === 0) this.step()
   }
 
   step (): void {
-    if (this.phase === 'move') {
-      this.phase = 'choice'
-      this.countdown = choiceInterval
-      this.checkEnd()
-      this.updatePlayers()
-    } else if (this.phase === 'choice') {
-      this.layout = advance(this.layout, this.choice)
-      this.choice = this.layout.units[this.layout.rank].dir
-      this.phase = 'move'
-      this.countdown = moveInterval
-    } else if (this.phase === 'end') {
-      this.restart()
+    if (this.summary.phase === 'move') {
+      this.summary.phase = 'choice'
+      this.summary.countdown = choiceInterval
+    } else if (this.summary.phase === 'choice') {
+      const oldRank = this.summary.round % unitCount
+      this.summary.directions[oldRank] = this.summary.choice
+      this.summary.state = getOutcome(this.summary.state, this.summary.choice)
+      this.summary.round += 1
+      this.summary.phase = 'move'
+      this.summary.countdown = moveInterval
+      const newRank = this.summary.round % unitCount
+      this.summary.choice = this.summary.directions[newRank]
+      this.players.forEach(player => {
+        player.socket.emit('move', this.summary)
+      })
+      checkEnd(this.summary)
+    } else if (this.summary.phase === 'end') {
+      this.summary = new Summary(this)
+      this.paused = true
+      this.players.forEach(player => {
+        player.socket.emit('move', this.summary)
+      })
     }
-  }
-
-  restart (): void {
-    this.layout = new Layout()
-    this.phase = 'choice'
-    this.countdown = choiceInterval
-    this.paused = true
-    this.choice = this.layout.units[0].dir
-    this.checkEnd()
-    this.updatePlayers()
-  }
-
-  checkEnd (): void {
-    const win = this.layout.score !== 0
-    const timeOut = this.layout.round > maxRound
-    if (win || timeOut) {
-      console.log('final round', this.layout.round)
-      console.log('score', this.layout.score)
-      this.phase = 'end'
-      this.countdown = endInterval
-    }
-  }
-
-  updatePlayers (): void {
-    this.players.forEach(player => {
-      player.socket.emit('layout', this.layout)
-    })
   }
 
   getSmallTeam (): number {

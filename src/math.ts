@@ -3,6 +3,12 @@ export function range (a: number, b?: number): number[] {
   return [...Array(b - a + 1).keys()].map(i => a + i)
 }
 
+export function randInt (min: number, max: number): number {
+  const a = Math.ceil(min)
+  const b = Math.floor(max)
+  return Math.floor(Math.random() * (b - a + 1) + a)
+}
+
 export function sample<T> (choices: T[]): T {
   return choices[Math.floor(Math.random() * choices.length)]
 }
