@@ -17,7 +17,7 @@ export class Summary {
     this.token = game.token
     this.state = randInt(0, stateCount - 1)
     this.directions = range(6).map(i => sample(actionSpace))
-    this.goals = [12, 17]
+    this.goals = [12, 13]
     this.round = 0
   }
 }

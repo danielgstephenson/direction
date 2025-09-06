@@ -1,14 +1,18 @@
 import { console } from 'inspector'
 import { clamp, product, range } from './math'
-import { gridVecs, actionVecs, unitCount, gridLocs } from './params'
+import { gridVecs, actionVecs, unitCount, gridLocs, gridSize } from './params'
+
+export const vecToLoc = range(gridSize).map(i => range(gridSize))
+gridLocs.forEach(loc => {
+  const vec = gridVecs[loc]
+  vecToLoc[vec.x][vec.y] = loc
+})
 
 export const shift = gridVecs.map(oldVec => {
-  return actionVecs.map((actionVec, i) => {
+  return actionVecs.map(actionVec => {
     const x = clamp(oldVec.x + actionVec.x, 0, 4)
     const y = clamp(oldVec.y + actionVec.y, 0, 4)
-    return gridVecs.findIndex(gridVec => {
-      return gridVec.x === x && gridVec.y === y
-    })
+    return vecToLoc[x][y]
   })
 })
 

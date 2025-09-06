@@ -24,7 +24,8 @@ export const gridVecs: Vec2[] = range(gridSize).flatMap(x => {
   })
 })
 
-export const gridLocs = range(gridVecs.length)
+export const gridCount = gridVecs.length
+export const gridLocs = range(gridCount)
 
 export const innerLocs = gridLocs.filter(loc => {
   const v = gridVecs[loc]
