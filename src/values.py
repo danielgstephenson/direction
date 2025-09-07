@@ -36,7 +36,7 @@ for loc in gridLocs:
 
 def stateToLocs(state):
 	options = gridLocs.copy()
-	s = int(state)
+	s = state
 	locs = np.array([], dtype=np.uint8)
 	for _ in range(unitCount):
 		optionCount = len(options)
@@ -104,6 +104,6 @@ getValue0(state, goals)
 
 x = torch.vmap(getValue0,in_dims=(0,None))(goals,states)
 
-# Next, define the getScore function
-# Then, define the initial value tensor
-# Then, perform value function interation 
+# Convert all the numpy array to pytorch tensors
+# Construct the initial value tensor using torch.vmap
+# Perform value interation using torch.vmap
