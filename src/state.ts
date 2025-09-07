@@ -1,4 +1,3 @@
-import { console } from 'inspector'
 import { clamp, product, range } from './math'
 import { gridVecs, actionVecs, unitCount, gridLocs, gridSize } from './params'
 
@@ -48,19 +47,16 @@ export function getOutcome (state: number, action: number): number {
   const locs = stateToLocs(state)
   let movers = [0]
   let oldLoc = locs[0]
-  console.log('check', gridVecs[oldLoc])
   for (let step = 0; step < 6; step++) {
     const nextLoc = shift[oldLoc][action]
     if (nextLoc === oldLoc) {
       movers = []
       break
     }
-    console.log('check', gridVecs[nextLoc])
     const obstacle = locs.findIndex(loc => loc === nextLoc)
     if (obstacle < 0) {
       break
     } else {
-      console.log('obstacle', obstacle)
       movers.push(obstacle)
     }
     oldLoc = nextLoc

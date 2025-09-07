@@ -3,7 +3,7 @@ import { Player } from './player'
 import { Server } from './server'
 import { randInt, sample } from './math'
 import { advance, checkEnd, Summary } from './summary'
-import { getOutcome, shift, stateCount, stateToLocs, vecToLoc } from './state'
+import { getOutcome, stateCount, stateToLocs } from './state'
 
 export class Game {
   token = String(Math.random())
@@ -18,8 +18,6 @@ export class Game {
     this.startIo()
     setInterval(() => this.tick(), updateInterval / this.timeScale * 1000)
     checkEnd(this.summary)
-    console.log(vecToLoc)
-    console.log(shift)
     console.log('')
     const state = randInt(0, stateCount - 1)
     console.log('state', state)
@@ -31,11 +29,11 @@ export class Game {
     console.log('action', action)
     const outcome = getOutcome(state, action)
     console.log('outcome', outcome)
-    const locs2 = stateToLocs(outcome)
-    console.log('locs', locs2)
-    const vectors2 = locs2.map(loc => gridVecs[loc])
-    console.log('vectors', vectors2)
-    console.log('')
+    // const locs2 = stateToLocs(outcome)
+    // console.log('locs', locs2)
+    // const vectors2 = locs2.map(loc => gridVecs[loc])
+    // console.log('vectors', vectors2)
+    // console.log('')
   }
 
   startIo (): void {
