@@ -82,11 +82,27 @@ def getOutcome (state, action):
 	locs = np.append(locs, actorLoc)
 	return locsToState(locs)
 
+def getValue0 (goals, state):
+	locs = stateToLocs(state)
+	myLocs = locs[[0,2,4]]
+	otherLocs = locs[[1,3,5]]
+	myScore = len(np.intersect1d(myLocs, goals))
+	otherScore = len(np.intersect1d(otherLocs, goals))
+	if(myScore == 2): return 200
+	if(otherScore == 2): return 0
+	return 100
+
 state = 63032467
+locs = stateToLocs(state)
 outcome = getOutcome(state, 1)
 values = torch.zeros(stateCount, dtype=torch.uint8)
 values[outcome] = 100
+states = torch.tensor(range(stateCount),dtype=torch.uint32)
+goals = torch.tensor([12, 13],dtype=torch.uint8)
 
+getValue0(state, goals)
+
+x = torch.vmap(getValue0,in_dims=(0,None))(goals,states)
 
 # Next, define the getScore function
 # Then, define the initial value tensor
