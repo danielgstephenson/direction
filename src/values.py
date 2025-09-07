@@ -58,7 +58,7 @@ def locsToState (locs):
 		options = np.delete(options, optionIndex)
 		coefficient = coefficients[unitIndex]
 		total += optionIndex * coefficient
-	return total.item()
+	return total
 
 def getOutcome (state, action):
 	locs = stateToLocs(state)
@@ -83,4 +83,11 @@ def getOutcome (state, action):
 	return locsToState(locs)
 
 state = 63032467
-getOutcome(state, 1)
+outcome = getOutcome(state, 1)
+values = torch.zeros(stateCount, dtype=torch.uint8)
+values[outcome] = 100
+
+
+# Next, define the getScore function
+# Then, define the initial value tensor
+# Then, perform value function interation 
