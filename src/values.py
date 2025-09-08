@@ -1,10 +1,9 @@
 import torch
 import numpy as np
+import os
 
-class Vec2:
-	def __init__(self, x, y):
-		self.x = int(x)
-		self.y = int(y)
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("device = " + str(device))
 
 def clamp(x, a, b):
 	return max(a, min(x, b))
@@ -12,98 +11,131 @@ def clamp(x, a, b):
 gridSize = 5
 unitCount = 6
 maxRound = 48
-actionSpace = np.array([0, 1, 2, 3], np.uint8)
-actionCount = len(actionSpace)
-actionVecs = [Vec2(1,0),Vec2(0,1),Vec2(-1,0),Vec2(0,-1)]
+actionSpace = torch.tensor([0, 1, 2, 3], dtype=torch.int).to(device)
+actionCount = 4
+actionVecs = torch.tensor([[1,0],[0,1],[-1,0],[0,-1]], dtype=torch.int).to(device)
+gridVecs = torch.tensor(
+	[[x,y] for x in range(gridSize) for y in range(gridSize)],
+	dtype=torch.int
+).to(device)
+gridCount = gridVecs.size()[0]
+gridLocs = torch.tensor([loc for loc in range(gridCount)], dtype=torch.int).to(device)
 
-gridVecs = [Vec2(x,y) for x in range(gridSize) for y in range(gridSize)]
-gridCount = len(gridVecs)
-gridLocs = np.array([loc for loc in range(gridCount)], dtype=np.uint8)
-
-vecToLoc = np.zeros((gridSize, gridSize),dtype=np.uint8)
+vecToLoc = torch.zeros((gridSize, gridSize),dtype=torch.int).to(device)
 for loc in gridLocs:
 	vec = gridVecs[loc]
-	vecToLoc[vec.x, vec.y] = loc
+	vecToLoc[vec[0], vec[1]] = loc
 
-shift = np.zeros((gridCount,actionCount),dtype=np.uint8)
+shift = torch.zeros((gridCount,actionCount),dtype=torch.int).to(device)
 for loc in gridLocs:
 	for dir in actionSpace:
 		gridVec = gridVecs[loc]
 		actionVec = actionVecs[dir]
-		x = clamp(gridVec.x + actionVec.x, 0, gridSize-1)
-		y = clamp(gridVec.y + actionVec.y, 0, gridSize-1)
+		x = clamp(gridVec[0] + actionVec[0], 0, gridSize-1)
+		y = clamp(gridVec[1] + actionVec[1], 0, gridSize-1)
 		shift[loc,dir] = vecToLoc[x, y]
 
 def stateToLocs(state):
-	options = gridLocs.copy()
+	options = gridLocs.clone()
 	s = state
-	locs = np.array([], dtype=np.uint8)
+	locs = torch.tensor([], dtype=torch.int).to(device)
 	for _ in range(unitCount):
-		optionCount = len(options)
+		optionCount = options.size()[0]
 		i = s % optionCount
 		s = (s-i) // optionCount
-		locs = np.append(locs, options[i])
-		options = np.delete(options,i) 
+		locs = torch.cat((locs, options[i]))
+		options = torch.cat((options[:i],options[i+1:]))
 	return locs
 
-optionCounts = np.array([gridCount - r for r in range(unitCount)])
-stateCount = np.prod(optionCounts)
-coefficients = np.array([int(np.prod(optionCounts[0:i])) for i in range(unitCount)])
-
+optionCounts = torch.tensor(
+	[gridCount - r for r in range(unitCount)], 
+	dtype=torch.int32
+).to(device)
+stateCount = torch.prod(optionCounts,dtype=torch.int32).to(device)
+coefficients = torch.tensor(
+	[torch.prod(optionCounts[0:i]) for i in range(unitCount)],
+	dtype=torch.int32
+).to(device)
 def locsToState (locs):
-	options = gridLocs.copy()
+	options = gridLocs.clone()
 	total = 0
-	for unitIndex, loc in enumerate(locs):
-		optionIndex = np.where(options == loc)[0]
-		options = np.delete(options, optionIndex)
+	for unitIndex in range(unitCount):
+		loc = locs[unitIndex]
+		optionIndex = torch.nonzero(torch.where(options == loc, 1, 0))[0]
+		options = torch.cat((options[:optionIndex],options[optionIndex+1:]))
 		coefficient = coefficients[unitIndex]
 		total += optionIndex * coefficient
-	return total
+	return total.to(dtype=torch.int32)
 
 def getOutcome (state, action):
 	locs = stateToLocs(state)
-	movers = np.array([0], dtype=np.uint8)
+	movers = torch.tensor([0], dtype=torch.int).to(device)
 	oldLoc = locs[0]
 	for _ in range(unitCount):
-		nextLoc = shift[oldLoc][action]
+		nextLoc = shift[oldLoc,action]
 		if nextLoc == oldLoc:
 			movers = []
 			break
-		obstacles = np.where(locs == nextLoc)[0]
-		if len(obstacles) == 0:
+		obstacles = torch.nonzero(torch.where(locs == nextLoc, 1, 0))
+		if obstacles.size()[0] == 0:
 			break
-		movers = np.append(movers, obstacles[0])
+		movers = torch.cat((movers, obstacles[0]))
 		oldLoc = nextLoc
 	for mover in movers:
 		loc = locs[mover]
 		locs[mover] = shift[loc,action]
 	actorLoc = locs[0]
-	locs = np.delete(locs, 0)
-	locs = np.append(locs, actorLoc)
+	locs = locs[1:]
+	locs = torch.cat((locs, actorLoc.unsqueeze(0)))
 	return locsToState(locs)
 
+# Work From Here
+
 def getValue0 (goals, state):
+	print('goals',goals)
+	print('state',state)
 	locs = stateToLocs(state)
 	myLocs = locs[[0,2,4]]
 	otherLocs = locs[[1,3,5]]
-	myScore = len(np.intersect1d(myLocs, goals))
-	otherScore = len(np.intersect1d(otherLocs, goals))
-	if(myScore == 2): return 200
-	if(otherScore == 2): return 0
-	return 100
+	myScore = torch.isin(goals,myLocs).sum()
+	otherScore = torch.isin(goals,otherLocs).sum()
+	if(myScore == 2): return 100
+	if(otherScore == 2): return -100
+	return 0
 
-state = 63032467
-locs = stateToLocs(state)
-outcome = getOutcome(state, 1)
-values = torch.zeros(stateCount, dtype=torch.uint8)
+
+states = torch.tensor(range(stateCount),dtype=torch.int32).to(device)
+
+state = torch.tensor([63032467],dtype=torch.int32).to(device)
+locs = stateToLocs(state).to(device)
+outcome = getOutcome(state, 1).to(device)
+
+goals = torch.tensor([12, 13],dtype=torch.int).to(device)
+values = torch.zeros(stateCount, dtype=torch.int8).to(device)
 values[outcome] = 100
-states = torch.tensor(range(stateCount),dtype=torch.uint32)
-goals = torch.tensor([12, 13],dtype=torch.uint8)
 
-getValue0(state, goals)
+os.system('clear')
 
-x = torch.vmap(getValue0,in_dims=(0,None))(goals,states)
+# Still trying to figure out how to make this compatible with vmap
+def testStateToLocs(state):
+	s = state.clone()
+	mask = torch.ones_like(gridLocs, dtype=torch.bool)
+	locs = torch.tensor([], dtype=torch.int).to(device)
+	for unitIndex in range(unitCount):
+		optionCount = gridCount - unitIndex
+		i = s % optionCount
+		s = (s-i) // optionCount
+		loc = gridLocs[mask][i.view(1)]
+		locs = torch.cat((locs, loc))
+		mask = mask.index_put((loc.view(1),), torch.tensor(False))
+	return locs
 
-# Convert all the numpy array to pytorch tensors
+testStateToLocs(state)
+stateToLocs(state)
+
+testStates = states[10000:10005]
+x = torch.vmap(testStateToLocs,in_dims=0)(testStates)
+
+# Update all function to be compatible with vmap
 # Construct the initial value tensor using torch.vmap
 # Perform value interation using torch.vmap
