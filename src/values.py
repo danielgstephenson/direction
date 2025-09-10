@@ -10,6 +10,9 @@ def clamp(x, a, b):
 
 gridSize = 5
 unitCount = 6
+units = torch.arange(unitCount, dtype=torch.int32).to(device)
+myUnits = torch.tensor([0,2,4], dtype=torch.int32).to(device)
+otherUnits = torch.tensor([1,3,5], dtype=torch.int32).to(device)
 maxRound = 48
 actionSpace = torch.tensor([0, 1, 2, 3], dtype=torch.int).to(device)
 actionCount = 4
@@ -35,14 +38,14 @@ for loc in gridLocs:
 		y = clamp(gridVec[1] + actionVec[1], 0, gridSize-1)
 		shift[loc,dir] = vecToLoc[x, y]
 
-def moveToEnd(tensor_1d, index):
+def moveToEnd(tensor_1d: torch.Tensor, index: int):
 	indices = torch.arange(tensor_1d.size()[0]).to(device)
 	matches = torch.where(indices==index,1,0)
 	sorted_indices = torch.argsort(matches, stable=True)
 	sorted = torch.gather(tensor_1d, 0, sorted_indices)
 	return sorted
 
-def stateToLocs(state):
+def stateToLocs(state: torch.Tensor):
 	options = gridLocs.clone()
 	s = state
 	locs = torch.tensor([], dtype=torch.int).to(device)
@@ -66,96 +69,84 @@ coefficients = torch.tensor(
 	dtype=torch.int32
 ).to(device)
 
-def locsToState (locs):
+def locsToState (locs: torch.Tensor):
 	options = gridLocs.clone()
 	total = 0
 	for unitIndex in range(unitCount):
 		loc = locs[unitIndex]
-		optionIndex = torch.nonzero(torch.where(options == loc, 1, 0))[0] # Make compatible with vmap
-		options = torch.cat((options[:optionIndex],options[optionIndex+1:]))
+		matches = (options == loc).long()
+		optionIndex = torch.argmax(matches)
+		options = moveToEnd(options,optionIndex)
 		coefficient = coefficients[unitIndex]
 		total += optionIndex * coefficient
 	return total.to(dtype=torch.int32)
 
-def getOutcome (state, action):
-	locs = stateToLocs(state)
-	movers = torch.tensor([0], dtype=torch.int).to(device)
-	oldLoc = locs[0]
-	for _ in range(unitCount):
-		nextLoc = shift[oldLoc,action]
-		if nextLoc == oldLoc:
-			movers = []
-			break
-		obstacles = torch.nonzero(torch.where(locs == nextLoc, 1, 0))
-		if obstacles.size()[0] == 0:
-			break
-		movers = torch.cat((movers, obstacles[0]))
-		oldLoc = nextLoc
-	for mover in movers:
-		loc = locs[mover]
-		locs[mover] = shift[loc,action]
-	actorLoc = locs[0]
-	locs = locs[1:]
-	locs = torch.cat((locs, actorLoc.unsqueeze(0)))
-	return locsToState(locs)
+def isin(x: torch.Tensor, y: torch.Tensor):
+	return (x == y.unsqueeze(-1)).any(dim=0)
 
-
-def getOutcomes(state):
-	s0 = getOutcome(state, actionSpace[0])
-	s1 = getOutcome(state, actionSpace[1])
-	s2 = getOutcome(state, actionSpace[2])
-	s3 = getOutcome(state, actionSpace[3])
-	return torch.tensor([s0,s1,s2,s3]).to(device)
-
-def getValue0 (goals, state):
-	print('goals',goals)
-	print('state',state)
-	locs = stateToLocs(state)
-	myLocs = locs[[0,2,4]]
-	otherLocs = locs[[1,3,5]]
-	myScore = torch.isin(goals,myLocs).sum()
-	otherScore = torch.isin(goals,otherLocs).sum()
-	if(myScore == 2): return 100
-	if(otherScore == 2): return -100
-	return 0
-
-states = torch.tensor(range(stateCount),dtype=torch.int32).to(device)
-goals = torch.tensor([12, 13],dtype=torch.int).to(device)
-values = torch.zeros(stateCount, dtype=torch.int8).to(device)
-
-os.system('clear')
-
-def testGetOutcome (state, action):
+def getOutcome (state: torch.Tensor, action: torch.Tensor):
 	locs = stateToLocs(state)
 	stepLoc = locs[0].clone().view(1)
 	path = torch.tensor([], dtype=torch.int).to(device)
 	for _ in range(gridSize):
 		path = torch.cat((path,stepLoc))
 		stepLoc = shift[stepLoc.view(1),action.view(1)]
-	occupied = torch.isin(path,locs)
+	occupied = isin(path,locs)
 	blocked = torch.all(occupied)
-	moving = torch.cumprod(torch.isin(locs,path),0).to(torch.bool) 
+	moving = torch.cumprod(isin(locs,path),0).to(torch.bool) 
 	moving = moving & ~blocked
 	shifted = shift[locs, action.view(1)]
 	moved = torch.where(moving, shifted, locs)
 	cycled = moveToEnd(moved, 0)
 	return locsToState(cycled)
 
-def testGetOutcomes(state):
-	s0 = testGetOutcome(state, actionSpace[0])
-	s1 = testGetOutcome(state, actionSpace[1])
-	s2 = testGetOutcome(state, actionSpace[2])
-	s3 = testGetOutcome(state, actionSpace[3])
-	return torch.tensor([s0,s1,s2,s3]).to(device)
+def getOutcomeVector(state: torch.Tensor):
+	return torch.vmap(getOutcome, in_dims=(None, 0))(state, actionSpace)
+
+def getOutcomes(states: torch.Tensor):
+	return torch.vmap(getOutcomeVector)(states)
+
+scoreValues = 100*torch.ones((3,3), dtype=torch.uint8).to(device)
+scoreValues[2,:] = 200
+scoreValues[:,2] = 0
+
+def getEndValue (goals: torch.Tensor, state: torch.Tensor):
+	locs = stateToLocs(state)
+	myLocs = locs[myUnits]
+	otherLocs = locs[otherUnits]
+	myScore = isin(goals,myLocs).sum()
+	otherScore = isin(goals,otherLocs).sum()
+	return scoreValues[myScore.view(1), otherScore.view(1)].squeeze()
+
+def getEndValues (goals: torch.Tensor, states: torch.Tensor):
+	f = torch.vmap(
+		getEndValue, 
+		in_dims=(None, 0), 
+		chunk_size=stateCount // 100
+	)
+	return f(goals, states)
+
+os.system('clear')
+
+# testing with a small number of states
+
+goals = torch.tensor([12, 13],dtype=torch.int).to(device)
+states = torch.arange(stateCount,dtype=torch.int32).to(device)
 
 state = states[63032467]
-stateToLocs(state)
-getOutcome(state, actionSpace[3])
-testGetOutcome(state, actionSpace[3])
+getOutcome(state,actionSpace[3])
+getEndValue(goals, state)
+getOutcomeVector(state)
 
 testStates = states[63032467:63032470]
-testStates
-torch.vmap(testGetOutcomes,in_dims=0)(testStates)
+outcomes = getOutcomes(testStates)
+values = getEndValues(goals, testStates)
+
+# run with the full set of states
+
+states = torch.arange(stateCount,dtype=torch.int32).to(device)
+goals = torch.tensor([12, 13],dtype=torch.int).to(device)
+values = getEndValues(goals, states)
 
 # state 63032467
 # locs [ 17, 2, 14, 15, 22, 10 ]
