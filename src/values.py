@@ -148,6 +148,8 @@ states = torch.arange(stateCount,dtype=torch.int32).to(device)
 goals = torch.tensor([12, 13],dtype=torch.int).to(device)
 values = getEndValues(goals, states)
 
+values.cpu().numpy().tofile('values.bin')
+
 # state 63032467
 # locs [ 17, 2, 14, 15, 22, 10 ]
 # vectors [
