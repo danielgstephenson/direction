@@ -122,7 +122,7 @@ def getEndValues (goals: torch.Tensor, states: torch.Tensor):
 	f = torch.vmap(
 		getEndValue, 
 		in_dims=(None, 0), 
-		chunk_size=stateCount // 100
+		chunk_size=stateCount // 50
 	)
 	return f(goals, states)
 
@@ -139,8 +139,8 @@ getEndValue(goals, state)
 getOutcomeVector(state)
 
 testStates = states[63032467:63032470]
-outcomes = getOutcomes(testStates)
-values = getEndValues(goals, testStates)
+testOutcomes = getOutcomes(testStates)
+testValues = getEndValues(goals, testStates)
 
 # run with the full set of states
 
