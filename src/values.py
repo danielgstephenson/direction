@@ -63,6 +63,7 @@ optionCounts = torch.tensor(
 ).to(device)
 
 stateCount = torch.prod(optionCounts,dtype=torch.int32).to(device)
+states = torch.arange(stateCount,dtype=torch.int32).to(device)
 
 coefficients = torch.tensor(
 	[torch.prod(optionCounts[0:i]) for i in range(unitCount)],
@@ -84,28 +85,6 @@ def locsToState (locs: torch.Tensor):
 def isin(x: torch.Tensor, y: torch.Tensor):
 	return (x == y.unsqueeze(-1)).any(dim=0)
 
-def getOutcome (state: torch.Tensor, action: torch.Tensor):
-	locs = stateToLocs(state)
-	stepLoc = locs[0].clone().view(1)
-	path = torch.tensor([], dtype=torch.int).to(device)
-	for _ in range(gridSize):
-		path = torch.cat((path,stepLoc))
-		stepLoc = shift[stepLoc.view(1),action.view(1)]
-	occupied = isin(path,locs)
-	blocked = torch.all(occupied)
-	moving = torch.cumprod(isin(locs,path),0).to(torch.bool) 
-	moving = moving & ~blocked
-	shifted = shift[locs, action.view(1)]
-	moved = torch.where(moving, shifted, locs)
-	cycled = moveToEnd(moved, 0)
-	return locsToState(cycled)
-
-def getOutcomeVector(state: torch.Tensor):
-	return torch.vmap(getOutcome, in_dims=(None, 0))(state, actionSpace)
-
-def getOutcomes(states: torch.Tensor):
-	return torch.vmap(getOutcomeVector)(states)
-
 scoreValues = 100*torch.ones((3,3), dtype=torch.uint8).to(device)
 scoreValues[2,:] = 200
 scoreValues[:,2] = 0
@@ -122,50 +101,88 @@ def getEndValues (goals: torch.Tensor, states: torch.Tensor):
 	f = torch.vmap(
 		getEndValue, 
 		in_dims=(None, 0), 
-		chunk_size=stateCount // 50
+		chunk_size=stateCount // 500
 	)
 	return f(goals, states)
 
-os.system('clear')
+def getOutcome (state: torch.Tensor, action: torch.Tensor):
+	unitLocs = stateToLocs(state)
+	#print('start',gridVecs[unitLocs])
+	stepLoc = unitLocs[0].clone().view(1)
+	pathLocs = torch.tensor([], dtype=torch.int).to(device)
+	pathUnits = torch.tensor([], dtype=torch.int).to(device)
+	for _ in range(gridSize):
+		pathLocs = torch.cat((pathLocs,stepLoc))
+		stepLoc = shift[stepLoc.view(1),action.view(1)]
+	occupied = isin(pathLocs,unitLocs)
+	blocked = torch.all(occupied)
+	pushing = torch.cumprod(isin(pathLocs,unitLocs),0).to(torch.bool) 
+	movingPath = pushing & ~blocked
+	#print('pathLocs',pathLocs)
+	movingPathLocs = torch.where(movingPath, pathLocs, -1)
+	#print('movingPathLocs',movingPathLocs)
+	movingUnits = isin(unitLocs,movingPathLocs)
+	shifted = shift[unitLocs, action.view(1)]
+	movedUnitLocs = torch.where(movingUnits, shifted, unitLocs)
+	cycledUnitLocs = moveToEnd(movedUnitLocs, 0)
+	#print('end',gridVecs[cycledUnitLocs])
+	outcome = locsToState(cycledUnitLocs)
+	return outcome
 
-# testing with a small number of states
+def getOutcomes(state: torch.Tensor):
+	return torch.vmap(getOutcome, in_dims=(None, 0))(state, actionSpace)
 
-goals = torch.tensor([12, 13],dtype=torch.int).to(device)
-states = torch.arange(stateCount,dtype=torch.int32).to(device)
 
-state = states[63032467]
-getOutcome(state,actionSpace[3])
-getEndValue(goals, state)
-getOutcomeVector(state)
+endValues = torch.tensor([0,200]).to(device)
+valueRange = torch.arange(201).to(device)
+invertValue = 200 - valueRange + torch.sign(valueRange-100)
+invertValue[99] = 101
+invertValue[101] = 99
 
-testStates = states[63032467:63032470]
-testOutcomes = getOutcomes(testStates)
-testValues = getEndValues(goals, testStates)
+def getValue(values: torch.Tensor, state: torch.Tensor):
+	outcomes = getOutcomes(state)
+	nextValues = values[outcomes].to(torch.int)
+	inverseNextValues = invertValue[nextValues]
+	maxInverseNextValue = torch.max(inverseNextValues)
+	oldValue = values[state.view(1)]
+	#print('state',state)
+	#print('oldValue',oldValue)
+	#print('torch.abs(oldValue-100)',torch.abs(oldValue-100))
+	endState = isin(oldValue,endValues)
+	#print('endState',endState)
+	#print('maxInverseNextValue',maxInverseNextValue)
+	value = torch.where(endState,oldValue,maxInverseNextValue)
+	#print('value',value)
+	return value
 
-# run with the full set of states
+def getValues(values: torch.Tensor, selected_states=states):
+	f = torch.vmap(
+		getValue, 
+		in_dims = (None, 0), 
+		chunk_size = stateCount // 500
+	)
+	return torch.squeeze(f(values, selected_states))
 
-states = torch.arange(stateCount,dtype=torch.int32).to(device)
 goals = torch.tensor([12, 13],dtype=torch.int).to(device)
 values = getEndValues(goals, states)
 
+values[34312]
+getValue(values,states[34312])
+
+values[7139148]
+getValue(values,states[7139148])
+
+values[7139140:7139180]
+getValues(values, states[7139140:7139180])
+
+for i in range(100):
+	print('step '+str(i))
+	print(torch.unique(values).cpu().numpy())
+	values = getValues(values)
+	print('')
+
 values.cpu().numpy().tofile('values.bin')
 
-# state 63032467
-# locs [ 17, 2, 14, 15, 22, 10 ]
-# vectors [
-#   { x: 3, y: 2 },
-#   { x: 0, y: 2 },
-#   { x: 2, y: 4 },
-#   { x: 3, y: 0 },
-#   { x: 4, y: 2 },
-#   { x: 2, y: 0 }
-# ]
-# action 3
-# outcome 79509927
+# os.system('clear')
 
-# Update all function to be compatible with vmap
-# Construct the initial value tensor using torch.vmap
-# Perform value interation using torch.vmap
-
-# [0  1  3  4  5  6  7  8  9 10 11 12 14 15 16 18 19 20 21 22 23 24]
-# [0  1  3  4  5  6  7  8  9 10 11 12 13 16 18 19 20 21 22 23 24]
+# Save the values 
