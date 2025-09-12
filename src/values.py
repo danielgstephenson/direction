@@ -89,7 +89,7 @@ scoreValues = 100*torch.ones((3,3), dtype=torch.uint8).to(device)
 scoreValues[2,:] = 200
 scoreValues[:,2] = 0
 
-def getEndValue (goals: torch.Tensor, state: torch.Tensor):
+def getMyopicValue (goals: torch.Tensor, state: torch.Tensor):
 	locs = stateToLocs(state)
 	myLocs = locs[myUnits]
 	otherLocs = locs[otherUnits]
@@ -97,9 +97,9 @@ def getEndValue (goals: torch.Tensor, state: torch.Tensor):
 	otherScore = isin(goals,otherLocs).sum()
 	return scoreValues[myScore.view(1), otherScore.view(1)].squeeze()
 
-def getEndValues (goals: torch.Tensor, states: torch.Tensor):
+def getMyopicValues (goals: torch.Tensor, states: torch.Tensor):
 	f = torch.vmap(
-		getEndValue, 
+		getMyopicValue, 
 		in_dims=(None, 0), 
 		chunk_size=stateCount // 500
 	)
@@ -133,7 +133,7 @@ def getOutcomes(state: torch.Tensor):
 	return torch.vmap(getOutcome, in_dims=(None, 0))(state, actionSpace)
 
 
-endValues = torch.tensor([0,200]).to(device)
+victoryValues = torch.tensor([0,200]).to(device)
 valueRange = torch.arange(201).to(device)
 invertValue = 200 - valueRange + torch.sign(valueRange-100)
 invertValue[99] = 101
@@ -148,7 +148,7 @@ def getValue(values: torch.Tensor, state: torch.Tensor):
 	#print('state',state)
 	#print('oldValue',oldValue)
 	#print('torch.abs(oldValue-100)',torch.abs(oldValue-100))
-	endState = isin(oldValue,endValues)
+	endState = isin(oldValue,victoryValues)
 	#print('endState',endState)
 	#print('maxInverseNextValue',maxInverseNextValue)
 	value = torch.where(endState,oldValue,maxInverseNextValue)
@@ -160,20 +160,11 @@ def getValues(values: torch.Tensor, selected_states=states):
 		getValue, 
 		in_dims = (None, 0), 
 		chunk_size = stateCount // 500
-	)
+	) 
 	return torch.squeeze(f(values, selected_states))
 
 goals = torch.tensor([12, 13],dtype=torch.int).to(device)
-values = getEndValues(goals, states)
-
-values[34312]
-getValue(values,states[34312])
-
-values[7139148]
-getValue(values,states[7139148])
-
-values[7139140:7139180]
-getValues(values, states[7139140:7139180])
+values = getMyopicValues(goals, states)
 
 for i in range(100):
 	print('step '+str(i))
@@ -181,8 +172,6 @@ for i in range(100):
 	values = getValues(values)
 	print('')
 
-values.cpu().numpy().tofile('values.bin')
+values.to(torch.uint8).cpu().numpy().tofile('values.bin')
 
 # os.system('clear')
-
-# Save the values 
