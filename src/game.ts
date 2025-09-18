@@ -1,9 +1,8 @@
-import { actionSpace, choiceInterval, gridVecs, updateInterval } from './params'
+import { choiceInterval, updateInterval } from './params'
 import { Player } from './player'
 import { Server } from './server'
-import { randInt, sample } from './math'
+import { sample } from './math'
 import { advance, checkEnd, Summary } from './summary'
-import { getOutcome, stateCount, stateToLocs } from './state'
 
 export class Game {
   token = String(Math.random())
@@ -18,17 +17,17 @@ export class Game {
     this.startIo()
     setInterval(() => this.tick(), updateInterval / this.timeScale * 1000)
     checkEnd(this.summary)
-    console.log('')
-    const state = randInt(0, stateCount - 1)
-    console.log('state', state)
-    const locs = stateToLocs(state)
-    console.log('locs', locs)
-    const vectors = locs.map(loc => gridVecs[loc])
-    console.log('vectors', vectors)
-    const action = sample(actionSpace)
-    console.log('action', action)
-    const outcome = getOutcome(state, action)
-    console.log('outcome', outcome)
+    // console.log('')
+    // const state = randInt(0, stateCount - 1)
+    // console.log('state', state)
+    // const locs = stateToLocs(state)
+    // console.log('locs', locs)
+    // const vectors = locs.map(loc => gridVecs[loc])
+    // console.log('vectors', vectors)
+    // const action = sample(actionSpace)
+    // console.log('action', action)
+    // const outcome = getOutcome(state, action)
+    // console.log('outcome', outcome)
     // const locs2 = stateToLocs(outcome)
     // console.log('locs', locs2)
     // const vectors2 = locs2.map(loc => gridVecs[loc])

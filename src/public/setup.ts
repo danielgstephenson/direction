@@ -8,7 +8,6 @@ import { Renderer } from './renderer'
 export function setup (renderer: Renderer, summary: Summary): void {
   setupGrids(renderer)
   setupRoundLine(renderer)
-  setupRoundLine(renderer)
   setupEndLine(renderer)
   setupUnits(renderer, summary)
   setupGoals(renderer, summary)

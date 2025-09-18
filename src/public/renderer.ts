@@ -125,6 +125,7 @@ export class Renderer {
       const perimeter = 4 * (gridSize + this.padding)
       const b = perimeter * summary.round / maxRound
       const a = perimeter - b
+      console.log('round', summary.round, a, b)
       roundLine.attr('stroke-dasharray', `${a} ${b}`)
     })
   }
