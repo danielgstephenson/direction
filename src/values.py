@@ -133,9 +133,9 @@ def getOutcomes(state: torch.Tensor):
 	return torch.vmap(getOutcome, in_dims=(None, 0))(state, actionSpace)
 
 
-victoryValues = torch.tensor([0,200]).to(device)
-valueRange = torch.arange(201).to(device)
-invertValue = 200 - valueRange + torch.sign(valueRange-100)
+victoryValues = torch.tensor([0,200]).to(device) # Should this be converted to uint8?
+valueRange = torch.arange(201).to(device) # Should this be converted to uint8?
+invertValue = 200 - valueRange + torch.sign(valueRange-100) # Should this be converted to uint8?
 invertValue[99] = 101
 invertValue[101] = 99
 
@@ -153,7 +153,7 @@ def getValue(values: torch.Tensor, state: torch.Tensor):
 	#print('maxInverseNextValue',maxInverseNextValue)
 	value = torch.where(endState,oldValue,maxInverseNextValue)
 	#print('value',value)
-	return value
+	return value # Should this be converted to uint8?
 
 def getValues(values: torch.Tensor, selected_states=states):
 	f = torch.vmap(
@@ -163,15 +163,28 @@ def getValues(values: torch.Tensor, selected_states=states):
 	) 
 	return torch.squeeze(f(values, selected_states))
 
-goals = torch.tensor([12, 13],dtype=torch.int).to(device)
-values = getMyopicValues(goals, states)
+def saveValues():
+	goals = torch.tensor([12, 13],dtype=torch.int).to(device)
+	values = getMyopicValues(goals, states)
+	for i in range(100):
+		print('step '+str(i))
+		print(torch.unique(values).cpu().numpy())
+		values = getValues(values)
+		print('')
+	values.to(torch.uint8).cpu().numpy().tofile('values.bin')
 
-for i in range(100):
-	print('step '+str(i))
-	print(torch.unique(values).cpu().numpy())
-	values = getValues(values)
-	print('')
-
-values.to(torch.uint8).cpu().numpy().tofile('values.bin')
+def saveStartingStates():
+	values = np.fromfile('values.bin', dtype=np.uint8).astype(np.int16)
+	steps = 100 - np.abs(values-100)
+	np.max(steps)
+	np.min(steps)
+	A = steps < 72
+	B = steps > 48
+	C0 = values > 100
+	C1 = values < 100
+	startingStates0 = np.where(A&B&C0)[0]
+	startingStates1 = np.where(A&B&C1)[0]
+	startingStates0.astype(np.int32).tofile('startingStates0.bin')
+	startingStates1.astype(np.int32).tofile('startingStates1.bin')
 
 # os.system('clear')
