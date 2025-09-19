@@ -1,6 +1,6 @@
 import { Game } from './game'
 import { randInt, range, sample } from './math'
-import { actionSpace, choiceInterval, endInterval, maxRound, moveInterval, unitCount } from './params'
+import { actionSpace, endInterval, maxRound, moveInterval, startInterval, unitCount } from './params'
 import { getOutcome, stateCount, stateToLocs } from './state'
 
 export class Summary {
@@ -8,9 +8,11 @@ export class Summary {
   state: number
   goals: number[]
   directions: number[]
-  countdown = choiceInterval
+  countdown = startInterval
   choice = sample(actionSpace)
-  phase = 'choice'
+  phase = 'start'
+  full = false
+  botTeam = -1
   round = 0
 
   constructor (game: Game) {

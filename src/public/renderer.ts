@@ -1,7 +1,7 @@
 import { range, Vec2 } from '../math'
-import { choiceInterval, endInterval, gridSize, gridVecs, maxRound, moveInterval, unitCount } from '../params'
+import { choiceInterval, endInterval, gridVecs, maxRound, moveInterval, startInterval, unitCount } from '../params'
 import { Client } from './client'
-import { SVG, G, Rect } from '@svgdotjs/svg.js'
+import { SVG, G, Rect, Circle } from '@svgdotjs/svg.js'
 import { getScores, Summary } from '../summary'
 import { stateToLocs } from '../state'
 import { setup } from './setup'
@@ -18,12 +18,12 @@ export class Renderer {
   labelGroups: G[] = []
   unitGroups: G[] = []
   goalGroups: G[] = []
-  padding = 0.5
+  fullCircles: Circle[] = []
+  padding = 1.25
   team: number = 0
   focus: Vec2 = { x: 0, y: 0 }
   setupComplete = false
-
-  borderColor = 'hsl(0, 0%, 10%)'
+  borderColor = 'hsl(0, 0%, 15%)'
   highlightColor = 'hsl(0, 0%, 100%)'
   goalColor = 'hsl(60, 100%, 50%)'
   tieColor = 'hsl(0, 100%, 20%)'
@@ -47,7 +47,6 @@ export class Renderer {
     const activeTeam = activeRank % 2
     const unitLocs = stateToLocs(summary.state)
     if (summary.phase === 'choice') {
-      this.clearHighlights()
       range(unitCount).forEach(i => {
         const location = unitLocs[i]
         const position = gridVecs[location]
@@ -70,14 +69,13 @@ export class Renderer {
         const b = 4 - a
         highlight.attr('stroke-dasharray', `${a} ${b}`)
       })
-    } else if (summary.phase === 'move') {
-      this.clearHighlights()
-    } else if (summary.phase === 'end') {
-      this.clearHighlights()
-      const perimeter = 4 * (gridSize + 0.5 * this.padding)
-      const a = perimeter * summary.countdown / endInterval
-      const b = perimeter - a
+    } else if (['start', 'end'].includes(summary.phase)) {
+      const interval = summary.phase === 'start' ? startInterval : endInterval
       this.endLines.forEach(endLine => {
+        const sideLength = endLine.bbox().width
+        const perimeter = 4 * sideLength
+        const a = perimeter * summary.countdown / interval
+        const b = perimeter - a
         endLine.attr('stroke-dasharray', `${a} ${b}`)
       })
     }
@@ -106,6 +104,8 @@ export class Renderer {
   updateGrid (summary: Summary): void {
     const scores = getScores(summary)
     let mapColor = this.borderColor
+    this.clearHighlights()
+    this.updateFullCircles(summary)
     if (summary.phase === 'end') {
       mapColor = this.tieColor
       if (scores[0] === 2) mapColor = this.teamColors[0]
@@ -116,17 +116,33 @@ export class Renderer {
       })
     }
     this.tiles.flat().forEach(tile => {
-      tile.stroke({ color: mapColor, width: 0.05 })
+      tile.stroke({ color: mapColor })
     })
     this.endLines.forEach(endLine => {
-      endLine.stroke({ color: mapColor, width: 0.05 })
+      endLine.stroke({ color: mapColor })
     })
     this.roundLines.forEach(roundLine => {
-      const perimeter = 4 * (gridSize + this.padding)
+      const sideLength = roundLine.bbox().width
+      const perimeter = 4 * sideLength
       const b = perimeter * summary.round / maxRound
       const a = perimeter - b
-      console.log('round', summary.round, a, b)
-      roundLine.attr('stroke-dasharray', `${a} ${b}`)
+      const active = [0, 1].includes(this.team)
+      const color = active ? this.teamColors[this.team] : this.borderColor
+      roundLine.stroke({
+        dasharray: `${a} ${b}`,
+        color
+      })
+    })
+  }
+
+  updateFullCircles (summary: Summary): void {
+    const opacity = summary.full ? 1 : 0
+    this.fullCircles.forEach(circle => {
+      let color = this.borderColor
+      if ([0, 1].includes(summary.botTeam)) {
+        color = this.teamColors[1 - summary.botTeam]
+      }
+      circle.fill({ opacity, color })
     })
   }
 
@@ -145,7 +161,7 @@ export class Renderer {
 
   onResize (): void {
     const vmin = Math.min(window.innerWidth, window.innerHeight)
-    const scale = 0.8
+    const scale = 1
     this.svg.size(scale * vmin, scale * vmin)
     const direction = window.innerWidth < window.innerHeight ? 'column' : 'row'
     this.svgDiv.style.flexDirection = direction

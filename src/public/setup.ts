@@ -9,6 +9,7 @@ export function setup (renderer: Renderer, summary: Summary): void {
   setupGrids(renderer)
   setupRoundLine(renderer)
   setupEndLine(renderer)
+  setupBotCircles(renderer)
   setupUnits(renderer, summary)
   setupGoals(renderer, summary)
   renderer.setupComplete = true
@@ -36,7 +37,7 @@ function setupGrids (renderer: Renderer): void {
       highlight.opacity(0)
       renderer.highlights[x][y] = highlight
       const tile = gridGroup.rect(1, 1).center(x, y)
-      tile.stroke({ color: renderer.borderColor, width: 0.07 })
+      tile.stroke({ color: renderer.borderColor, width: 0.05 })
       tile.fill('none')
       renderer.tiles[x][y] = tile
     })
@@ -44,14 +45,15 @@ function setupGrids (renderer: Renderer): void {
 }
 
 function setupRoundLine (renderer: Renderer): void {
-  const width = gridSize + renderer.padding
-  const height = gridSize + renderer.padding
+  const gap = 0.5
+  const width = gridSize + gap
+  const height = gridSize + gap
   const center = 0.5 * (gridSize - 1)
   const roundLine = renderer.svg.rect(width, height)
   roundLine.fill({ opacity: 0 })
   roundLine.stroke({
     color: renderer.borderColor,
-    width: 0.06,
+    width: 0.05,
     linecap: 'square'
   })
   roundLine.center(center, center)
@@ -59,15 +61,16 @@ function setupRoundLine (renderer: Renderer): void {
 }
 
 function setupEndLine (renderer: Renderer): void {
-  const width = gridSize + 0.5 * renderer.padding
-  const height = gridSize + 0.5 * renderer.padding
+  const gap = 0.25
+  const width = gridSize + gap
+  const height = gridSize + gap
   const center = 0.5 * (gridSize - 1)
   const endLine = renderer.svg.rect(width, height)
   renderer.endLines[0] = endLine
   endLine.fill({ opacity: 0 })
   endLine.stroke({
     color: renderer.borderColor,
-    width: 0.07,
+    width: 0.05,
     linecap: 'square'
   })
   endLine.center(center, center)
@@ -114,6 +117,9 @@ function setupUnits (renderer: Renderer, summary: Summary): void {
       linejoin: 'round'
     })
     label.fill('none')
+    unitGroup.click((event: MouseEvent) => {
+      renderer.client.socket.emit('selectTeam', team)
+    })
     renderer.unitGroups[rank] = unitGroup
     renderer.bodyGroups[rank] = bodyGroup
     renderer.labelGroups[rank] = labelGroup
@@ -136,5 +142,25 @@ function setupGoals (renderer: Renderer, summary: Summary): void {
       width: 0.05,
       opacity: 0.7
     })
+  })
+}
+
+function setupBotCircles (renderer: Renderer): void {
+  const points = [
+    [5, 2],
+    [2, 5],
+    [-1, 2],
+    [2, -1]
+  ]
+  points.forEach(point => {
+    const x = point[0]
+    const y = point[1]
+    const circle = renderer.svg.circle(0.15)
+    circle.center(x, y)
+    circle.fill({
+      color: renderer.borderColor,
+      opacity: 0
+    })
+    renderer.fullCircles.push(circle)
   })
 }

@@ -41,12 +41,22 @@ export class Game {
       this.players.push(player)
       console.log('connect:', socket.id, this.players.length)
       socket.on('choice', (choice: number) => {
-        this.paused = false
         const choicePhase = this.summary.phase === 'choice'
         const activeTeam = this.summary.round % 2
         const activePlayer = player.team === activeTeam
         if (choicePhase && activePlayer) {
           this.summary.choice = choice
+        }
+      })
+      socket.on('selectTeam', (team: number) => {
+        const opening = this.getActiveCount() < 2
+        const startPhase = this.summary.phase === 'start'
+        if (opening && startPhase) {
+          player.team = team
+          this.paused = false
+        }
+        if (this.getActiveCount() > 1) {
+          this.summary.full = true
         }
       })
       socket.on('disconnect', () => {
@@ -66,7 +76,9 @@ export class Game {
   }
 
   step (): void {
-    if (this.summary.phase === 'move') {
+    if (this.summary.phase === 'start') {
+      this.start()
+    } else if (this.summary.phase === 'move') {
       this.summary.phase = 'choice'
       this.summary.countdown = choiceInterval
     } else if (this.summary.phase === 'choice') {
@@ -75,12 +87,34 @@ export class Game {
         player.socket.emit('move', this.summary)
       })
     } else if (this.summary.phase === 'end') {
-      this.summary = new Summary(this)
-      this.paused = true
-      this.players.forEach(player => {
-        player.socket.emit('move', this.summary)
-      })
+      this.reset()
     }
+  }
+
+  start (): void {
+    const count0 = this.getPlayerCount(0)
+    const count1 = this.getPlayerCount(1)
+    const maxCount = Math.max(count0, count1)
+    if (maxCount > 1) {
+      this.reset()
+      return
+    }
+    this.summary.full = true
+    const empty0 = count0 === 0
+    const empty1 = count1 === 0
+    if (empty0) this.summary.botTeam = 0
+    if (empty1) this.summary.botTeam = 1
+    this.summary.phase = 'choice'
+    this.summary.countdown = choiceInterval
+  }
+
+  reset (): void {
+    this.summary = new Summary(this)
+    this.paused = true
+    this.players.forEach(player => {
+      player.team = -1
+      player.socket.emit('move', this.summary)
+    })
   }
 
   getSmallTeam (): number {
@@ -94,5 +128,11 @@ export class Game {
   getPlayerCount (team: number): number {
     const teamPlayers = this.players.filter(p => p.team === team)
     return teamPlayers.length
+  }
+
+  getActiveCount (): number {
+    const count0 = this.getPlayerCount(0)
+    const count1 = this.getPlayerCount(1)
+    return count0 + count1
   }
 }
