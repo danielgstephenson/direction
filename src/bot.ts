@@ -12,22 +12,6 @@ export class Bot {
     this.startingStates0 = this.getDataView('startingStates0.bin')
     this.startingStates1 = this.getDataView('startingStates1.bin')
     this.values = readFileSync('values.bin')
-    console.log('startingStates0', this.startingStates0.buffer.byteLength / 4)
-    range(5).forEach(i => {
-      const offset = i * 4 // 4 bytes for an int32
-      const state = this.startingStates0.getInt32(offset, true)
-      console.log(i, state)
-    })
-    console.log('startingStates1', this.startingStates1.buffer.byteLength / 4)
-    range(5).forEach(i => {
-      const offset = i * 4 // 4 bytes for an int32
-      const state = this.startingStates1.getInt32(offset, true)
-      console.log(i, state)
-    })
-    console.log('values', this.values.byteLength)
-    range(5).forEach(i => {
-      console.log(i, this.values[i])
-    })
   }
 
   getAction (state: number): number {
