@@ -187,4 +187,12 @@ def saveStartingStates():
 	startingStates0.astype(np.int32).tofile('startingStates0.bin')
 	startingStates1.astype(np.int32).tofile('startingStates1.bin')
 
+startingStates0 = np.fromfile('startingStates0.bin', dtype=np.int32)
+for i in range(5):
+	print(i, startingStates0[i])
+
+values = np.fromfile('values.bin', dtype=np.uint8)
+for i in range(5):
+	print(i, values[i])
+
 # os.system('clear')

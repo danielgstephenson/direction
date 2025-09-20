@@ -3,9 +3,11 @@ import { Player } from './player'
 import { Server } from './server'
 import { sample } from './math'
 import { advance, checkEnd, Summary } from './summary'
+import { Bot } from './bot'
 
 export class Game {
   token = String(Math.random())
+  bot = new Bot()
   server = new Server()
   players: Player[] = []
   summary = new Summary(this)
