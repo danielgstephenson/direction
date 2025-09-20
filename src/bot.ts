@@ -8,7 +8,7 @@ export class Bot {
 
   constructor () {
     this.startingStates0 = this.getDataView('startingStates0.bin')
-    this.startingStates1 = this.getDataView('startingStates0.bin')
+    this.startingStates1 = this.getDataView('startingStates1.bin')
     this.values = readFileSync('values.bin')
     console.log('startingStates0')
     range(5).forEach(i => {
