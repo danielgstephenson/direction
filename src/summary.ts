@@ -9,7 +9,7 @@ export class Summary {
   goals: number[]
   directions: number[]
   countdown = startInterval
-  choice = sample(actionSpace)
+  action = sample(actionSpace)
   phase = 'start'
   full = false
   botTeam = -1
@@ -17,7 +17,8 @@ export class Summary {
 
   constructor (game: Game) {
     this.token = game.token
-    this.state = randInt(0, stateCount - 1)
+    // this.state = randInt(0, stateCount - 1)
+    this.state = game.bot.getStartingState()
     this.directions = range(6).map(i => sample(actionSpace))
     this.goals = [12, 13]
     this.round = 0
@@ -26,13 +27,13 @@ export class Summary {
 
 export function advance (summary: Summary): void {
   const oldRank = summary.round % unitCount
-  summary.directions[oldRank] = summary.choice
-  summary.state = getOutcome(summary.state, summary.choice)
+  summary.directions[oldRank] = summary.action
+  summary.state = getOutcome(summary.state, summary.action)
   summary.round += 1
   summary.phase = 'move'
   summary.countdown = moveInterval
   const newRank = summary.round % unitCount
-  summary.choice = summary.directions[newRank]
+  summary.action = summary.directions[newRank]
   checkEnd(summary)
 }
 

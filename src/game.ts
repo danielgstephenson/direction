@@ -47,7 +47,7 @@ export class Game {
         const activeTeam = this.summary.round % 2
         const activePlayer = player.team === activeTeam
         if (choicePhase && activePlayer) {
-          this.summary.choice = choice
+          this.summary.action = choice
         }
       })
       socket.on('selectTeam', (team: number) => {
@@ -83,6 +83,12 @@ export class Game {
     } else if (this.summary.phase === 'move') {
       this.summary.phase = 'choice'
       this.summary.countdown = choiceInterval
+      const team = this.summary.round % 2
+      if (team === this.summary.botTeam) {
+        const action = this.bot.getAction(this.summary.state)
+        console.log('bot action:', action)
+        this.summary.action = action
+      }
     } else if (this.summary.phase === 'choice') {
       advance(this.summary)
       this.players.forEach(player => {

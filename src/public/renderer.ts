@@ -53,7 +53,7 @@ export class Renderer {
         const rank = (summary.round + i) % unitCount
         const bodyGroup = this.bodyGroups[rank]
         const dir = rank === activeRank
-          ? summary.choice
+          ? summary.action
           : summary.directions[rank]
         bodyGroup.transform({
           translateX: 0,

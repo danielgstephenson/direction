@@ -9,8 +9,8 @@ export function randInt (min: number, max: number): number {
   return Math.floor(Math.random() * (b - a + 1) + a)
 }
 
-export function sample<T> (choices: T[]): T {
-  return choices[Math.floor(Math.random() * choices.length)]
+export function sample<T> (options: T[]): T {
+  return options[Math.floor(Math.random() * options.length)]
 }
 
 export function sum (array: number[]): number {
