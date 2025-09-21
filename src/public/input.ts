@@ -18,8 +18,10 @@ export class Input {
       this.client.socket.emit('choice', 3)
     } else if (event.key === 'ArrowLeft' || event.key === 'a') {
       this.client.socket.emit('choice', 2)
+      this.client.socket.emit('selectTeam', 0)
     } else if (event.key === 'ArrowRight' || event.key === 'd') {
       this.client.socket.emit('choice', 0)
+      this.client.socket.emit('selectTeam', 1)
     }
   }
 

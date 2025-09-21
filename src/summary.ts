@@ -1,7 +1,7 @@
 import { Game } from './game'
-import { randInt, range, sample } from './math'
+import { range, sample } from './math'
 import { actionSpace, endInterval, maxRound, moveInterval, startInterval, unitCount } from './params'
-import { getOutcome, stateCount, stateToLocs } from './state'
+import { getOutcome, stateToLocs } from './state'
 
 export class Summary {
   token: string
@@ -17,7 +17,6 @@ export class Summary {
 
   constructor (game: Game) {
     this.token = game.token
-    // this.state = randInt(0, stateCount - 1)
     this.state = game.bot.getStartingState()
     this.directions = range(6).map(i => sample(actionSpace))
     this.goals = [12, 13]

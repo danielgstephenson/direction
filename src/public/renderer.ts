@@ -19,6 +19,7 @@ export class Renderer {
   unitGroups: G[] = []
   goalGroups: G[] = []
   fullCircles: Circle[] = []
+  flags: Rect[] = []
   padding = 1.25
   team: number = 0
   focus: Vec2 = { x: 0, y: 0 }
@@ -106,6 +107,7 @@ export class Renderer {
     let mapColor = this.borderColor
     this.clearHighlights()
     this.updateFullCircles(summary)
+    this.updateFlags(summary)
     if (summary.phase === 'end') {
       mapColor = this.tieColor
       if (scores[0] === 2) mapColor = this.teamColors[0]
@@ -133,6 +135,21 @@ export class Renderer {
         color
       })
     })
+  }
+
+  updateFlags (summary: Summary): void {
+    if (summary.phase === 'start') {
+      this.flags.forEach((flag, team) => {
+        const teamColor = this.teamColors[this.team]
+        const color = team === this.team ? teamColor : 'black'
+        flag.opacity(1)
+        flag.fill(color)
+      })
+    } else {
+      this.flags.forEach(flag => {
+        flag.opacity(0)
+      })
+    }
   }
 
   updateFullCircles (summary: Summary): void {

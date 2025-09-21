@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs-extra'
-import { range, sample } from './math'
+import { sample } from './math'
 import { getOutcome } from './state'
 import { actionSpace } from './params'
 

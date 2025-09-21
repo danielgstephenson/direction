@@ -9,7 +9,8 @@ export function setup (renderer: Renderer, summary: Summary): void {
   setupGrids(renderer)
   setupRoundLine(renderer)
   setupEndLine(renderer)
-  setupBotCircles(renderer)
+  setupFullCircles(renderer)
+  setupFlags(renderer)
   setupUnits(renderer, summary)
   setupGoals(renderer, summary)
   renderer.setupComplete = true
@@ -145,7 +146,7 @@ function setupGoals (renderer: Renderer, summary: Summary): void {
   })
 }
 
-function setupBotCircles (renderer: Renderer): void {
+function setupFullCircles (renderer: Renderer): void {
   const points = [
     [5, 2],
     [2, 5],
@@ -162,5 +163,26 @@ function setupBotCircles (renderer: Renderer): void {
       opacity: 0
     })
     renderer.fullCircles.push(circle)
+  })
+}
+
+function setupFlags (renderer: Renderer): void {
+  const points = [
+    [1, 5.2],
+    [3, 5.2]
+  ]
+  points.forEach((point, team) => {
+    const x = point[0]
+    const y = point[1]
+    const rect = renderer.svg.rect(0.4, 0.4)
+    rect.center(x, y)
+    rect.stroke({
+      color: renderer.teamColors[team],
+      width: 0.1
+    })
+    rect.click((event: MouseEvent) => {
+      renderer.client.socket.emit('selectTeam', team)
+    })
+    renderer.flags.push(rect)
   })
 }

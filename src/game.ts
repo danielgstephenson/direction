@@ -13,6 +13,8 @@ export class Game {
   summary = new Summary(this)
   timeScale: number
   paused = true
+  botAction = 0
+  botWait = 0.5 * choiceInterval
 
   constructor () {
     this.timeScale = this.server.config.timeScale
@@ -83,12 +85,7 @@ export class Game {
     } else if (this.summary.phase === 'move') {
       this.summary.phase = 'choice'
       this.summary.countdown = choiceInterval
-      const team = this.summary.round % 2
-      if (team === this.summary.botTeam) {
-        const action = this.bot.getAction(this.summary.state)
-        console.log('bot action:', action)
-        this.summary.action = action
-      }
+      this.botAct()
     } else if (this.summary.phase === 'choice') {
       advance(this.summary)
       this.players.forEach(player => {
@@ -96,6 +93,15 @@ export class Game {
       })
     } else if (this.summary.phase === 'end') {
       this.reset()
+    }
+  }
+
+  botAct (): void {
+    const team = this.summary.round % 2
+    const bot = team === this.summary.botTeam
+    if (bot) {
+      this.botAction = this.bot.getAction(this.summary.state)
+      this.summary.action = this.botAction
     }
   }
 
@@ -114,6 +120,7 @@ export class Game {
     if (empty1) this.summary.botTeam = 1
     this.summary.phase = 'choice'
     this.summary.countdown = choiceInterval
+    this.botAct()
   }
 
   reset (): void {
