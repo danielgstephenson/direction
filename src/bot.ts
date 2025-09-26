@@ -30,7 +30,6 @@ export class Bot {
     const state0 = this.startingStates0.getInt32(index0 * 4, true)
     const state1 = this.startingStates1.getInt32(index1 * 4, true)
     const startingState = sample([state0, state1])
-    console.log('value', this.values[startingState])
     return startingState
   }
 
