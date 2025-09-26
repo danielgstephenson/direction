@@ -138,18 +138,12 @@ export class Renderer {
   }
 
   updateFlags (summary: Summary): void {
-    if (summary.phase === 'start') {
-      this.flags.forEach((flag, team) => {
-        const teamColor = this.teamColors[this.team]
-        const color = team === this.team ? teamColor : 'black'
-        flag.opacity(1)
-        flag.fill(color)
-      })
-    } else {
-      this.flags.forEach(flag => {
-        flag.opacity(0)
-      })
-    }
+    this.flags.forEach((flag, team) => {
+      const teamColor = this.teamColors[this.team]
+      const color = team === this.team ? teamColor : 'black'
+      flag.opacity(1)
+      flag.fill(color)
+    })
   }
 
   updateFullCircles (summary: Summary): void {
