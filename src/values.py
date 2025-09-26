@@ -176,23 +176,29 @@ def saveValues():
 def saveStartingStates():
 	values = np.fromfile('values.bin', dtype=np.uint8).astype(np.int16)
 	steps = 100 - np.abs(values-100)
-	np.max(steps)
-	np.min(steps)
-	A = steps < 72
-	B = steps > 48
-	C0 = values > 100
-	C1 = values < 100
-	startingStates0 = np.where(A&B&C0)[0]
-	startingStates1 = np.where(A&B&C1)[0]
+	maxLevel = 36
+	sampleSize = 10000
+	startingStatesArray = np.zeros((2,maxLevel,sampleSize),dtype=np.int32)
+	B0 = values>100
+	B1 = values<100
+	for level in range(maxLevel):
+		print(level)
+		for team in range(2):
+			A = steps == 2*level + 1 + team
+			B = B0 if team==0 else B1
+			options = np.where(A&B)[0]
+			choices = np.random.choice(options, sampleSize, False)
+			startingStatesArray[team,level,:] = choices
+	startingStates0 = np.array(startingStatesArray[0,:,:].flat)
+	startingStates1 = np.array(startingStatesArray[1,:,:].flat)
 	startingStates0.astype(np.int32).tofile('startingStates0.bin')
 	startingStates1.astype(np.int32).tofile('startingStates1.bin')
 
-startingStates0 = np.fromfile('startingStates0.bin', dtype=np.int32)
+values = np.fromfile('values.bin', dtype=np.uint8).astype(np.int16)
+startingStates1 = np.fromfile('startingStates1.bin', dtype=np.int32)
 for i in range(5):
-	print(i, startingStates0[i])
-
-values = np.fromfile('values.bin', dtype=np.uint8)
-for i in range(5):
-	print(i, values[i])
+	state = startingStates1[i]
+	value = values[state]
+	print(i, state, value)
 
 # os.system('clear')

@@ -12,15 +12,7 @@ export function setup (renderer: Renderer, summary: Summary): void {
   setupFlags(renderer)
   setupUnits(renderer, summary)
   setupGoals(renderer, summary)
-  const text = renderer.svg.text('35')
-  text.font({
-    family: 'Lekton-Bold',
-    size: 0.5
-  })
-  text.attr('dominant-baseline', 'middle')
-  text.fill('hsl(0,0%,50%)')
-  text.flip('y')
-  text.center(2, -5.4)
+  setupLevelLabel(renderer, summary)
   renderer.setupComplete = true
 }
 
@@ -194,4 +186,17 @@ function setupFlags (renderer: Renderer): void {
     })
     renderer.flags.push(rect)
   })
+}
+
+function setupLevelLabel (renderer: Renderer, summary: Summary): void {
+  const levelLabel = renderer.svg.text('1')
+  levelLabel.font({
+    family: 'Lekton-Bold',
+    size: 0.5
+  })
+  levelLabel.attr('dominant-baseline', 'middle')
+  levelLabel.fill('hsl(0,0%,50%)')
+  levelLabel.flip('y')
+  levelLabel.center(2, -5.4)
+  renderer.levelLabels[0] = levelLabel
 }

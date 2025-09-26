@@ -1,8 +1,8 @@
 import { choiceInterval, updateInterval } from './params'
 import { Player } from './player'
 import { Server } from './server'
-import { sample } from './math'
-import { advance, checkEnd, Summary } from './summary'
+import { clamp, sample } from './math'
+import { advance, checkEnd, getScores, Summary } from './summary'
 import { Bot } from './bot'
 
 export class Game {
@@ -10,7 +10,8 @@ export class Game {
   bot = new Bot()
   server = new Server()
   players: Player[] = []
-  summary = new Summary(this)
+  level = 10
+  summary = new Summary(this, this.level)
   timeScale: number
   paused = true
   botAction = 0
@@ -124,12 +125,29 @@ export class Game {
   }
 
   reset (): void {
-    this.summary = new Summary(this)
+    this.updateLevel()
+    this.summary = new Summary(this, this.level)
     this.paused = true
     this.players.forEach(player => {
       player.team = -1
       player.socket.emit('move', this.summary)
     })
+  }
+
+  updateLevel (): void {
+    if ([0, 1].includes(this.summary.botTeam)) {
+      const botTeam = this.summary.botTeam
+      const playerTeam = 1 - botTeam
+      const scores = getScores(this.summary)
+      const botScore = scores[botTeam]
+      const playerScore = scores[playerTeam]
+      if (botScore > playerScore) {
+        this.level = clamp(1, 36, this.level - 1)
+      }
+      if (playerScore > botScore) {
+        this.level = clamp(1, 36, this.level + 4)
+      }
+    }
   }
 
   getSmallTeam (): number {

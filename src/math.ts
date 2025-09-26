@@ -30,7 +30,7 @@ export function mean (array: number[]): number {
   return sum(array) / array.length
 }
 
-export function clamp (x: number, a: number, b: number): number {
+export function clamp (a: number, b: number, x: number): number {
   return Math.max(a, Math.min(b, x))
 }
 

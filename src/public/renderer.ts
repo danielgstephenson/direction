@@ -1,7 +1,7 @@
 import { range, Vec2 } from '../math'
 import { choiceInterval, endInterval, gridVecs, maxRound, moveInterval, startInterval, unitCount } from '../params'
 import { Client } from './client'
-import { SVG, G, Rect, Circle } from '@svgdotjs/svg.js'
+import { SVG, G, Rect, Circle, Text } from '@svgdotjs/svg.js'
 import { getScores, Summary } from '../summary'
 import { stateToLocs } from '../state'
 import { setup } from './setup'
@@ -20,6 +20,7 @@ export class Renderer {
   goalGroups: G[] = []
   fullCircles: Circle[] = []
   flags: Rect[] = []
+  levelLabels: Text[] = []
   padding = 1.25
   team: number = 0
   focus: Vec2 = { x: 0, y: 0 }
@@ -134,6 +135,10 @@ export class Renderer {
         dasharray: `${a} ${b}`,
         color
       })
+    })
+    this.levelLabels.forEach(levelLabel => {
+      levelLabel.text(summary.level.toFixed(0))
+      levelLabel.center(2, -5.4)
     })
   }
 

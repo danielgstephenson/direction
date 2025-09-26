@@ -22,17 +22,20 @@ export class Bot {
     return sample(options)
   }
 
-  getStartingState (): number {
-    const state0 = this.sampleInt32View(this.startingStates0)
-    const state1 = this.sampleInt32View(this.startingStates1)
-    return sample([state0, state1])
+  getStartingState (level: number): number {
+    const sampleSize = 10000
+    const startIndex = (level - 1) * sampleSize
+    const index0 = startIndex + Math.floor(Math.random() * sampleSize)
+    const index1 = startIndex + Math.floor(Math.random() * sampleSize)
+    const state0 = this.startingStates0.getInt32(index0 * 4, true)
+    const state1 = this.startingStates1.getInt32(index1 * 4, true)
+    const startingState = sample([state0, state1])
+    console.log('value', this.values[startingState])
+    return startingState
   }
 
-  sampleInt32View (dataView: DataView): number {
-    const count = dataView.buffer.byteLength / 4
-    const index = Math.floor(Math.random() * count)
-    const offset = index * 4
-    const state = dataView.getInt32(offset, true)
+  readInt32 (dataView: DataView, index: number): number {
+    const state = dataView.getInt32(index * 4, true)
     return state
   }
 

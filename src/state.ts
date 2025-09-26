@@ -9,8 +9,8 @@ gridLocs.forEach(loc => {
 
 export const shift = gridVecs.map(oldVec => {
   return actionVecs.map(actionVec => {
-    const x = clamp(oldVec.x + actionVec.x, 0, 4)
-    const y = clamp(oldVec.y + actionVec.y, 0, 4)
+    const x = clamp(0, 4, oldVec.x + actionVec.x)
+    const y = clamp(0, 4, oldVec.y + actionVec.y)
     return vecToLoc[x][y]
   })
 })
