@@ -8,8 +8,8 @@ export class Summary {
   state: number
   goals: number[]
   directions: number[]
+  action: number
   countdown = startInterval
-  action = sample(actionSpace)
   phase = 'start'
   full = false
   botTeam = -1
@@ -19,6 +19,7 @@ export class Summary {
     this.token = game.token
     this.state = game.bot.getStartingState()
     this.directions = range(6).map(i => sample(actionSpace))
+    this.action = this.directions[0]
     this.goals = [12, 13]
     this.round = 0
   }

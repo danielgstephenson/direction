@@ -2,7 +2,6 @@ import { range } from '../math'
 import { gridSize, gridVecs, unitCount } from '../params'
 import { stateToLocs } from '../state'
 import { Summary } from '../summary'
-import { fiveLine, fourLine, oneLine, sixLine, threeLine, twoLine } from './numbers'
 import { Renderer } from './renderer'
 
 export function setup (renderer: Renderer, summary: Summary): void {
@@ -13,6 +12,15 @@ export function setup (renderer: Renderer, summary: Summary): void {
   setupFlags(renderer)
   setupUnits(renderer, summary)
   setupGoals(renderer, summary)
+  const text = renderer.svg.text('35')
+  text.font({
+    family: 'Lekton-Bold',
+    size: 0.5
+  })
+  text.attr('dominant-baseline', 'middle')
+  text.fill('hsl(0,0%,50%)')
+  text.flip('y')
+  text.center(2, -5.4)
   renderer.setupComplete = true
 }
 
@@ -100,24 +108,25 @@ function setupUnits (renderer: Renderer, summary: Summary): void {
     })
     const circle = bodyGroup.circle(0.9).center(0, 0).fill(color)
     const square = bodyGroup.rect(1, 1).center(0, 0).fill('white')
+    const pointerMask = bodyGroup.mask().add(square)
     const pointer = bodyGroup.rect(0.2, 0.15).center(0.4, 0).fill('black')
-    const pointerMask = bodyGroup.mask().add(square).add(pointer)
+    pointerMask.add(pointer)
+    // const pointer2 = bodyGroup.rect(0.2, 0.15).center(-0.4, 0).fill('black')
+    // pointerMask.add(pointer2)
+    // const pointer3 = bodyGroup.rect(0.15, 0.2).center(0, 0.4).fill('black')
+    // pointerMask.add(pointer3)
+    // const pointer4 = bodyGroup.rect(0.15, 0.2).center(0, -0.4).fill('black')
+    // pointerMask.add(pointer4)
     circle.maskWith(pointerMask)
-    const labelArray: number[] = []
-    if (rank + 1 === 1) labelArray.push(...oneLine)
-    if (rank + 1 === 2) labelArray.push(...twoLine)
-    if (rank + 1 === 3) labelArray.push(...threeLine)
-    if (rank + 1 === 4) labelArray.push(...fourLine)
-    if (rank + 1 === 5) labelArray.push(...fiveLine)
-    if (rank + 1 === 6) labelArray.push(...sixLine)
-    const label = labelGroup.polyline(labelArray)
-    label.stroke({
-      color: 'black',
-      width: 0.09,
-      linecap: 'round',
-      linejoin: 'round'
+    const text = unitGroup.text((rank + 1).toFixed(0))
+    text.font({
+      family: 'Lekton-Bold',
+      size: 0.7
     })
-    label.fill('none')
+    text.attr('dominant-baseline', 'middle')
+    text.fill('black')
+    text.flip('y')
+    text.center(0, 0)
     unitGroup.click((event: MouseEvent) => {
       renderer.client.socket.emit('selectTeam', team)
     })
