@@ -113,6 +113,7 @@ export class Game {
   reset (): void {
     this.updateLevel()
     this.summary = new Summary(this, this.level)
+    console.log('action', this.summary.action)
     this.paused = true
     this.players.forEach(player => {
       player.team = -1
@@ -131,7 +132,7 @@ export class Game {
         this.level = clamp(1, 36, this.level - 1)
       }
       if (playerScore > botScore) {
-        this.level = clamp(1, 36, this.level + 4)
+        this.level = clamp(1, 36, this.level + 1)
       }
     }
   }

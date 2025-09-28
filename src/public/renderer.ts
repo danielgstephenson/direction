@@ -46,6 +46,7 @@ export class Renderer {
     console.log('onTick')
     if (!this.setupComplete) setup(this, summary)
     this.updateGrid(summary)
+    this.updateDirections(summary)
     this.team = team
     const activeRank = summary.round % unitCount
     this.updateFocus(activeRank)
@@ -56,15 +57,6 @@ export class Renderer {
         const location = unitLocs[i]
         const position = gridVecs[location]
         const rank = (summary.round + i) % unitCount
-        const bodyGroup = this.bodyGroups[rank]
-        const dir = rank === activeRank
-          ? summary.action
-          : summary.directions[rank]
-        bodyGroup.transform({
-          translateX: 0,
-          translateY: 0,
-          rotate: 90 * dir
-        })
         if (rank !== activeRank) return
         const highlight = this.highlights[position.x][position.y]
         highlight.front()
@@ -84,6 +76,22 @@ export class Renderer {
         endLine.attr('stroke-dasharray', `${a} ${b}`)
       })
     }
+  }
+
+  updateDirections (summary: Summary): void {
+    const activeRank = summary.round % unitCount
+    range(unitCount).forEach(i => {
+      const rank = (summary.round + i) % unitCount
+      const bodyGroup = this.bodyGroups[rank]
+      const dir = rank === activeRank
+        ? summary.action
+        : summary.directions[rank]
+      bodyGroup.transform({
+        translateX: 0,
+        translateY: 0,
+        rotate: 90 * dir
+      })
+    })
   }
 
   clearHighlights (): void {
