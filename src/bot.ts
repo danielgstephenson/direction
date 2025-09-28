@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs-extra'
-import { sample } from './math'
+import { mean, sample } from './math'
 import { getOutcome } from './state'
 import { actionSpace } from './params'
 
@@ -16,10 +16,22 @@ export class Bot {
 
   getAction (state: number): number {
     const outcomes = actionSpace.map(action => getOutcome(state, action))
-    const values = outcomes.map(outcome => 200 - this.values[outcome])
-    const maxValue = Math.max(...values)
-    const options = actionSpace.filter(a => values[a] === maxValue)
-    return sample(options)
+    const nextValues = outcomes.map(outcome => 200 - this.values[outcome])
+    const maxNextValue = Math.max(...nextValues)
+    const options = actionSpace.filter(a => nextValues[a] === maxNextValue)
+    const noisyNextValues = options.map(option => 200 - this.getNoisyValue(option))
+    const maxNoisyNextValue = Math.max(...noisyNextValues)
+    const bestOptions = options.filter((option, i) => {
+      return noisyNextValues[i] === maxNoisyNextValue
+    })
+    return sample(bestOptions)
+  }
+
+  getNoisyValue (state: number): number {
+    const value = this.values[state]
+    const outcomes = actionSpace.map(action => getOutcome(state, action))
+    const nextValues = outcomes.map(outcome => 200 - this.values[outcome])
+    return 0.6 * value + 0.4 * mean(nextValues)
   }
 
   getStartingState (level: number): number {
