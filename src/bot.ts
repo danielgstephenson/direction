@@ -17,14 +17,13 @@ export class Bot {
   getAction (state: number): number {
     const outcomes = actionSpace.map(action => getOutcome(state, action))
     const nextValues = outcomes.map(outcome => 200 - this.values[outcome])
-    const maxNextValue = Math.max(...nextValues)
-    const options = actionSpace.filter(a => nextValues[a] === maxNextValue)
-    const noisyNextValues = options.map(option => 200 - this.getNoisyValue(option))
-    const maxNoisyNextValue = Math.max(...noisyNextValues)
-    const bestOptions = options.filter((option, i) => {
-      return noisyNextValues[i] === maxNoisyNextValue
+    const noisyNextValues = outcomes.map(outcome => 200 - this.getNoisyValue(outcome))
+    const actionValues = actionSpace.map(i => {
+      return nextValues[i] + 0.0001 * noisyNextValues[i]
     })
-    return sample(bestOptions)
+    const maxActionValue = Math.max(...actionValues)
+    const options = actionSpace.filter(a => actionValues[a] === maxActionValue)
+    return sample(options)
   }
 
   getNoisyValue (state: number): number {

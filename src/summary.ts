@@ -44,7 +44,6 @@ export function checkEnd (summary: Summary): void {
   const win = Math.max(...scores) === 2
   const outOfTime = summary.round > maxRound
   if (win || outOfTime) {
-    console.log('final round', summary.round)
     summary.phase = 'end'
     summary.countdown = endInterval
   }

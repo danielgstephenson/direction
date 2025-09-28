@@ -113,7 +113,6 @@ export class Game {
   reset (): void {
     this.updateLevel()
     this.summary = new Summary(this, this.level)
-    console.log('action', this.summary.action)
     this.paused = true
     this.players.forEach(player => {
       player.team = -1
