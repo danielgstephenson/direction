@@ -1,12 +1,14 @@
 import { range, Vec2 } from '../math'
 import { choiceInterval, endInterval, gridVecs, maxRound, moveInterval, startInterval, unitCount } from '../params'
 import { Client } from './client'
-import { SVG, G, Rect, Circle, Text } from '@svgdotjs/svg.js'
+import { SVG, G, Rect, Circle, Path } from '@svgdotjs/svg.js'
 import { getScores, Summary } from '../summary'
 import { stateToLocs } from '../state'
 import { setup } from './setup'
+import * as opentype from 'opentype.js'
 
 export class Renderer {
+  font: opentype.Font
   svgDiv = document.getElementById('svgDiv') as HTMLDivElement
   client: Client
   svg = SVG().addTo('#svgDiv')
@@ -15,12 +17,11 @@ export class Renderer {
   tiles: Rect[][] = []
   highlights: Rect[][] = []
   bodyGroups: G[] = []
-  labelGroups: G[] = []
   unitGroups: G[] = []
   goalGroups: G[] = []
   fullCircles: Circle[] = []
   flags: Rect[] = []
-  levelLabels: Text[] = []
+  levelLabels: Path[] = []
   padding = 1.25
   team: number = 0
   focus: Vec2 = { x: 0, y: 0 }
@@ -34,13 +35,15 @@ export class Renderer {
     'hsl(210, 100%, 40%)'
   ]
 
-  constructor (client: Client) {
+  constructor (client: Client, fontBuffer: ArrayBuffer) {
+    this.font = opentype.parse(fontBuffer)
     this.client = client
     this.onResize()
     window.addEventListener('resize', () => this.onResize())
   }
 
   onTick (summary: Summary, team: number): void {
+    console.log('onTick')
     if (!this.setupComplete) setup(this, summary)
     this.updateGrid(summary)
     this.team = team
@@ -90,6 +93,7 @@ export class Renderer {
   }
 
   onMove (summary: Summary): void {
+    console.log('onMove')
     const unitLocs = stateToLocs(summary.state)
     range(unitCount).forEach(i => {
       const location = unitLocs[i]
@@ -137,8 +141,15 @@ export class Renderer {
       })
     })
     this.levelLabels.forEach(levelLabel => {
-      levelLabel.text(summary.level.toFixed(0))
-      levelLabel.center(2, -5.4)
+      const text = summary.level.toFixed(0)
+      const path = this.font.getPath(text, 0, 0, 0.5)
+      levelLabel.attr({ d: path.toPathData(4) })
+      levelLabel.fill('hsl(0,0%,50%)')
+      const box = path.getBoundingBox()
+      levelLabel.transform({
+        translateX: 0.5 * (box.x1 - box.x2),
+        translateY: 0.5 * (box.y2 - box.y1)
+      })
     })
   }
 

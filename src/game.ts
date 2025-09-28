@@ -2,15 +2,17 @@ import { choiceInterval, updateInterval } from './params'
 import { Player } from './player'
 import { Server } from './server'
 import { clamp, sample } from './math'
-import { advance, checkEnd, getScores, Summary } from './summary'
+import { advance, getScores, Summary } from './summary'
 import { Bot } from './bot'
+import { readFileSync } from 'fs'
 
 export class Game {
   token = String(Math.random())
+  fontBuffer = readFileSync('./src/public/Lekton-Bold.ttf').buffer
   bot = new Bot()
   server = new Server()
   players: Player[] = []
-  level = 10
+  level = 1
   summary = new Summary(this, this.level)
   timeScale: number
   paused = true
@@ -21,29 +23,13 @@ export class Game {
     this.timeScale = this.server.config.timeScale
     this.startIo()
     setInterval(() => this.tick(), updateInterval / this.timeScale * 1000)
-    checkEnd(this.summary)
-    // console.log('')
-    // const state = randInt(0, stateCount - 1)
-    // console.log('state', state)
-    // const locs = stateToLocs(state)
-    // console.log('locs', locs)
-    // const vectors = locs.map(loc => gridVecs[loc])
-    // console.log('vectors', vectors)
-    // const action = sample(actionSpace)
-    // console.log('action', action)
-    // const outcome = getOutcome(state, action)
-    // console.log('outcome', outcome)
-    // const locs2 = stateToLocs(outcome)
-    // console.log('locs', locs2)
-    // const vectors2 = locs2.map(loc => gridVecs[loc])
-    // console.log('vectors', vectors2)
-    // console.log('')
   }
 
   startIo (): void {
     this.server.io.on('connection', socket => {
       const player = new Player(this, socket)
       this.players.push(player)
+      socket.emit('connected', this.fontBuffer)
       console.log('connect:', socket.id, this.players.length)
       socket.on('choice', (choice: number) => {
         const choicePhase = this.summary.phase === 'choice'

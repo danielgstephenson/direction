@@ -2,6 +2,7 @@
   font-family: 'Lekton-Bold';
   src: url('Lekton-Bold.ttf');
   font-style: bold;
+  font-display: block;
 }
 body {
   background-color: hsl(0, 0%, 0%);

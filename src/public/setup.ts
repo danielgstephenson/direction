@@ -94,10 +94,6 @@ function setupUnits (renderer: Renderer, summary: Summary): void {
       translateY: 0,
       rotate: 90 * dir
     })
-    const labelGroup = unitGroup.group().transform({
-      translateX: 0,
-      translateY: 0
-    })
     const circle = bodyGroup.circle(0.9).center(0, 0).fill(color)
     const square = bodyGroup.rect(1, 1).center(0, 0).fill('white')
     const pointerMask = bodyGroup.mask().add(square)
@@ -110,21 +106,16 @@ function setupUnits (renderer: Renderer, summary: Summary): void {
     // const pointer4 = bodyGroup.rect(0.15, 0.2).center(0, -0.4).fill('black')
     // pointerMask.add(pointer4)
     circle.maskWith(pointerMask)
-    const text = unitGroup.text((rank + 1).toFixed(0))
-    text.font({
-      family: 'Lekton-Bold',
-      size: 0.7
-    })
-    text.attr('dominant-baseline', 'middle')
-    text.fill('black')
-    text.flip('y')
-    text.center(0, 0)
+    const text = (rank + 1).toFixed(0)
+    const path = renderer.font.getPath(text, 0, 0, 0.7)
+    const box = path.getBoundingBox()
+    const label = unitGroup.path(path.toPathData(4)).flip('y')
+    label.center(0, box.y1 - box.y2)
     unitGroup.click((event: MouseEvent) => {
       renderer.client.socket.emit('selectTeam', team)
     })
     renderer.unitGroups[rank] = unitGroup
     renderer.bodyGroups[rank] = bodyGroup
-    renderer.labelGroups[rank] = labelGroup
   })
 }
 
@@ -189,14 +180,19 @@ function setupFlags (renderer: Renderer): void {
 }
 
 function setupLevelLabel (renderer: Renderer, summary: Summary): void {
-  const levelLabel = renderer.svg.text('1')
-  levelLabel.font({
-    family: 'Lekton-Bold',
-    size: 0.5
-  })
-  levelLabel.attr('dominant-baseline', 'middle')
-  levelLabel.fill('hsl(0,0%,50%)')
-  levelLabel.flip('y')
-  levelLabel.center(2, -5.4)
+  const group = renderer.svg.group()
+  const levelLabel = group.path()
+  group.translate(2, 5.4)
+  group.flip('y')
   renderer.levelLabels[0] = levelLabel
+
+  // const text = '1'
+  // const path = renderer.font.getPath(text, 0, 0, 0.5)
+  // const levelLabel = renderer.svg.path(path.toPathData(4))
+  // levelLabel.fill('hsl(0,0%,50%)')
+  // levelLabel.flip('y')
+  // const box = path.getBoundingBox()
+  // levelLabel.attr({ d: path.toPathData(4) })
+  // levelLabel.center(2, box.y1 - box.y2 - 5.4)
+  // renderer.levelLabels[0] = levelLabel
 }

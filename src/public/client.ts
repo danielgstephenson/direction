@@ -5,21 +5,23 @@ import { Summary } from '../summary'
 
 export class Client {
   socket = io()
-  renderer = new Renderer(this)
   input = new Input(this)
+  renderer?: Renderer
   token = ''
 
   constructor () {
-    this.socket.on('connected', () => {
+    this.socket.on('connected', (fontBuffer: ArrayBuffer) => {
       console.log('connected')
-    })
-    this.socket.on('tick', (summary: Summary, team: number) => {
-      this.checkToken(summary.token)
-      this.renderer.onTick(summary, team)
-    })
-    this.socket.on('move', (summary: Summary) => {
-      this.checkToken(summary.token)
-      this.renderer.onMove(summary)
+      const renderer = new Renderer(this, fontBuffer)
+      this.renderer = renderer
+      this.socket.on('tick', (summary: Summary, team: number) => {
+        this.checkToken(summary.token)
+        renderer.onTick(summary, team)
+      })
+      this.socket.on('move', (summary: Summary) => {
+        this.checkToken(summary.token)
+        renderer.onMove(summary)
+      })
     })
   }
 
@@ -27,7 +29,6 @@ export class Client {
     const reloadNeeded = !['', token].includes(this.token)
     if (reloadNeeded) {
       console.log('reloadNeeded', this.token, token)
-      this.renderer.svgDiv.style.display = 'none'
       location.reload()
     }
     this.token = token

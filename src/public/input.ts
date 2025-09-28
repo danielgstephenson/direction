@@ -26,7 +26,8 @@ export class Input {
   }
 
   onmousedown (event: MouseEvent): void {
-    const focus = this.client.renderer.focus
+    const focus = this.client.renderer?.focus
+    if (focus == null) return
     const x = event.clientX - focus.x
     const y = focus.y - event.clientY
     let dir = 0
