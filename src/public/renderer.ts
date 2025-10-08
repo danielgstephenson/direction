@@ -1,5 +1,5 @@
 import { range, Vec2 } from '../math'
-import { choiceInterval, endInterval, gridVecs, maxRound, moveInterval, startInterval, unitCount } from '../params'
+import { choiceInterval, endInterval, gridVecs, maxRound, moveInterval, teamInterval, unitCount } from '../params'
 import { Client } from './client'
 import { SVG, G, Rect, Circle, Path } from '@svgdotjs/svg.js'
 import { getScores, Summary } from '../summary'
@@ -66,8 +66,8 @@ export class Renderer {
         const b = 4 - a
         highlight.attr('stroke-dasharray', `${a} ${b}`)
       })
-    } else if (['start', 'end'].includes(summary.phase)) {
-      const interval = summary.phase === 'start' ? startInterval : endInterval
+    } else if (['end', 'team'].includes(summary.phase)) {
+      const interval = summary.phase === 'end' ? endInterval : teamInterval
       this.endLines.forEach(endLine => {
         const sideLength = endLine.bbox().width
         const perimeter = 4 * sideLength

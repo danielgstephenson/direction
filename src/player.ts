@@ -11,6 +11,6 @@ export class Player {
   constructor (game: Game, socket: DefaultSocket) {
     this.id = socket.id
     this.socket = socket
-    this.team = -1 // game.getSmallTeam()
+    this.team = -1
   }
 }

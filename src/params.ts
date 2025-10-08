@@ -2,11 +2,11 @@ import { range, Vec2 } from './math'
 
 export const gridSize = 5
 export const unitCount = 6
-export const updateInterval = 0.1
+export const tickInterval = 0.1
 export const moveInterval = 0.75
 export const choiceInterval = 3
-export const endInterval = 5 // 10
-export const startInterval = 5 // 10
+export const endInterval = 6
+export const teamInterval = 2
 export const maxRound = 72
 export const discount = 0.8
 

@@ -1,4 +1,4 @@
-import { choiceInterval, updateInterval } from './params'
+import { choiceInterval, tickInterval } from './params'
 import { Player } from './player'
 import { Server } from './server'
 import { clamp, sample } from './math'
@@ -12,17 +12,17 @@ export class Game {
   bot = new Bot()
   server = new Server()
   players: Player[] = []
-  level = 1
+  level = 5
   summary = new Summary(this, this.level)
-  timeScale: number
   paused = true
-  botAction = 0
-  botWait = 0.5 * choiceInterval
+  botActive: boolean
+  timeScale: number
 
   constructor () {
     this.timeScale = this.server.config.timeScale
+    this.botActive = this.server.config.botActive
     this.startIo()
-    setInterval(() => this.tick(), updateInterval / this.timeScale * 1000)
+    setInterval(() => this.tick(), tickInterval / this.timeScale * 1000)
   }
 
   startIo (): void {
@@ -37,17 +37,21 @@ export class Game {
         const activePlayer = player.team === activeTeam
         if (choicePhase && activePlayer) {
           this.summary.action = choice
+          this.summary.countdown = 0
         }
       })
       socket.on('selectTeam', (team: number) => {
         const opening = this.getActiveCount() < 2
-        const startPhase = this.summary.phase === 'start'
-        if (opening && startPhase) {
+        const teamPhase = this.summary.phase === 'team'
+        if (opening && teamPhase) {
           player.team = team
-          this.paused = false
-        }
-        if (this.getActiveCount() > 1) {
-          this.summary.full = true
+          if (this.getActiveCount() > 1) {
+            this.summary.full = true
+            this.paused = false
+            if (this.botActive) {
+              this.summary.countdown = 0
+            }
+          }
         }
       })
       socket.on('disconnect', () => {
@@ -57,46 +61,12 @@ export class Game {
     })
   }
 
-  tick (): void {
-    this.players.forEach(player => {
-      player.socket.emit('tick', this.summary, player.team)
-    })
-    if (this.paused) return
-    this.summary.countdown = Math.max(0, this.summary.countdown - updateInterval)
-    if (this.summary.countdown === 0) this.step()
-  }
-
-  step (): void {
-    if (this.summary.phase === 'start') {
-      this.start()
-    } else if (this.summary.phase === 'move') {
-      this.summary.phase = 'choice'
-      this.summary.countdown = choiceInterval
-      this.botAct()
-    } else if (this.summary.phase === 'choice') {
-      advance(this.summary)
-      this.players.forEach(player => {
-        player.socket.emit('move', this.summary)
-      })
-    } else if (this.summary.phase === 'end') {
-      this.reset()
-    }
-  }
-
-  botAct (): void {
-    const team = this.summary.round % 2
-    const bot = team === this.summary.botTeam
-    if (bot) {
-      this.botAction = this.bot.getAction(this.summary.state)
-      this.summary.action = this.botAction
-    }
-  }
-
   start (): void {
     const count0 = this.getPlayerCount(0)
     const count1 = this.getPlayerCount(1)
     const maxCount = Math.max(count0, count1)
     if (maxCount > 1) {
+      this.level = clamp(1, 30, this.level + 1)
       this.reset()
       return
     }
@@ -107,7 +77,42 @@ export class Game {
     if (empty1) this.summary.botTeam = 1
     this.summary.phase = 'choice'
     this.summary.countdown = choiceInterval
-    this.botAct()
+    this.botThink()
+  }
+
+  tick (): void {
+    this.players.forEach(player => {
+      player.socket.emit('tick', this.summary, player.team)
+    })
+    if (this.paused) return
+    this.summary.countdown = Math.max(0, this.summary.countdown - tickInterval)
+    if (this.summary.countdown === 0) this.step()
+  }
+
+  step (): void {
+    if (this.summary.phase === 'team') {
+      this.start()
+    } else if (this.summary.phase === 'move') {
+      this.summary.phase = 'choice'
+      this.summary.countdown = choiceInterval
+      this.botThink()
+    } else if (this.summary.phase === 'choice') {
+      advance(this.summary)
+      this.players.forEach(player => {
+        player.socket.emit('move', this.summary)
+      })
+    } else if (this.summary.phase === 'end') {
+      this.reset()
+    }
+  }
+
+  botThink (): void {
+    const team = this.summary.round % 2
+    const botAct = team === this.summary.botTeam
+    if (botAct) {
+      this.summary.action = this.bot.getAction(this.summary.state)
+      this.summary.countdown = 0
+    }
   }
 
   reset (): void {
@@ -128,10 +133,10 @@ export class Game {
       const botScore = scores[botTeam]
       const playerScore = scores[playerTeam]
       if (botScore > playerScore) {
-        this.level = clamp(1, 36, this.level - 1)
+        this.level = clamp(1, 30, this.level - 1)
       }
       if (playerScore > botScore) {
-        this.level = clamp(1, 36, this.level + 1)
+        this.level = clamp(1, 30, this.level + 1)
       }
     }
   }
@@ -152,6 +157,7 @@ export class Game {
   getActiveCount (): number {
     const count0 = this.getPlayerCount(0)
     const count1 = this.getPlayerCount(1)
-    return count0 + count1
+    const countBot = this.botActive ? 1 : 0
+    return count0 + count1 + countBot
   }
 }

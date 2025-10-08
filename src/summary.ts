@@ -1,6 +1,6 @@
 import { Game } from './game'
 import { range, sample } from './math'
-import { actionSpace, endInterval, maxRound, moveInterval, startInterval, unitCount } from './params'
+import { actionSpace, endInterval, maxRound, moveInterval, teamInterval, unitCount } from './params'
 import { getOutcome, stateToLocs } from './state'
 
 export class Summary {
@@ -10,8 +10,8 @@ export class Summary {
   directions: number[]
   action: number
   level: number
-  countdown = startInterval
-  phase = 'start'
+  countdown = teamInterval
+  phase = 'team'
   full = false
   botTeam = -1
   round = 0

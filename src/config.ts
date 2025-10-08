@@ -4,6 +4,7 @@ import path from 'path'
 export class Config {
   port = 3000
   secure = false
+  botActive = false
   timeScale = 1
 
   constructor () {
@@ -15,9 +16,11 @@ export class Config {
       if (typeof json.port === 'number') this.port = json.port
       if (typeof json.secure === 'boolean') this.secure = json.secure
       if (typeof json.timeScale === 'number') this.timeScale = json.timeScale
+      if (typeof json.botActive === 'boolean') this.botActive = json.botActive
     }
     console.log('port:', this.port)
     console.log('secure:', this.secure)
     console.log('timeScale:', this.timeScale)
+    console.log('botActive:', this.botActive)
   }
 }

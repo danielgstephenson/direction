@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs-extra'
 import { mean, sample } from './math'
-import { getOutcome } from './state'
-import { actionSpace } from './params'
+import { getOutcome, stateToLocs } from './state'
+import { actionSpace, gridVecs } from './params'
 
 export class Bot {
   startingStates0: DataView
@@ -16,21 +16,26 @@ export class Bot {
 
   getAction (state: number): number {
     const outcomes = actionSpace.map(action => getOutcome(state, action))
-    const nextValues = outcomes.map(outcome => 200 - this.values[outcome])
-    const noisyNextValues = outcomes.map(outcome => 200 - this.getNoisyValue(outcome))
-    const actionValues = actionSpace.map(i => {
-      return nextValues[i] + 0.0001 * noisyNextValues[i]
+    const actionValues = outcomes.map(outcome => {
+      const netDistance = this.getNetDistance(outcome)
+      return 200 - this.values[outcome] + 0.0001 * netDistance
     })
     const maxActionValue = Math.max(...actionValues)
     const options = actionSpace.filter(a => actionValues[a] === maxActionValue)
     return sample(options)
   }
 
-  getNoisyValue (state: number): number {
-    const value = this.values[state]
-    const outcomes = actionSpace.map(action => getOutcome(state, action))
-    const nextValues = outcomes.map(outcome => 200 - this.values[outcome])
-    return 0.6 * value + 0.4 * mean(nextValues)
+  getNetDistance (state: number): number {
+    const locs = stateToLocs(state)
+    const vecs = locs.map(loc => gridVecs[loc])
+    const dist = vecs.map(vec => {
+      const dx = vec.x - 2
+      const dy = vec.y - 2
+      return Math.sqrt(dx * dx + dy * dy)
+    })
+    const dist0 = [dist[0], dist[2], dist[4]]
+    const dist1 = [dist[1], dist[3], dist[5]]
+    return mean(dist0) - mean(dist1)
   }
 
   getStartingState (level: number): number {
