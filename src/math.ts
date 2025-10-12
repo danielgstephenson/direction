@@ -45,3 +45,17 @@ export function shuffle <T> (array: T[]): T[] {
     .sort((a, b) => a.priority - b.priority)
     .map(x => x.value)
 }
+
+export function rotate (vector: Vec2, origin: Vec2, qTurns: number): Vec2 {
+  const x0 = vector.x - origin.x
+  const y0 = vector.y - origin.y
+  const angle = 0.5 * Math.PI * qTurns
+  const cos = Math.cos(angle)
+  const sin = Math.sin(angle)
+  const x1 = x0 * cos - y0 * sin
+  const y1 = x0 * sin + y0 * cos
+  return {
+    x: Math.round(origin.x + x1),
+    y: Math.round(origin.y + y1)
+  }
+}

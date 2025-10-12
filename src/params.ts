@@ -1,4 +1,4 @@
-import { range, Vec2 } from './math'
+import { range, rotate, Vec2 } from './math'
 
 export const gridSize = 5
 export const unitCount = 6
@@ -18,6 +18,8 @@ export const actionVecs = [
 ]
 
 export const actionSpace = [0, 1, 2, 3]
+
+export const origin = { x: 2, y: 2 }
 
 export const gridVecs: Vec2[] = range(gridSize).flatMap(x => {
   return range(gridSize).map(y => {
@@ -46,3 +48,8 @@ export const outerGridVecs = gridVecs.filter(v => {
   const innerY = v.y > 0 && v.y < gridSize - 1
   return !innerX || !innerY
 })
+
+export function getPosition (loc: number, qTurns: number): Vec2 {
+  const gridVec = gridVecs[loc]
+  return rotate(gridVec, origin, qTurns)
+}

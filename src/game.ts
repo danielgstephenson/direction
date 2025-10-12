@@ -36,7 +36,8 @@ export class Game {
         const activeTeam = this.summary.round % 2
         const activePlayer = player.team === activeTeam
         if (choicePhase && activePlayer) {
-          this.summary.action = choice
+          const action = (4 + choice - this.summary.qTurns) % 4
+          this.summary.action = action
           this.summary.countdown = 0
         }
       })

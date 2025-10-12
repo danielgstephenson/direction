@@ -1,5 +1,5 @@
 import { range } from '../math'
-import { gridSize, gridVecs, unitCount } from '../params'
+import { getPosition, gridSize, unitCount } from '../params'
 import { stateToLocs } from '../state'
 import { Summary } from '../summary'
 import { Renderer } from './renderer'
@@ -82,7 +82,7 @@ function setupUnits (renderer: Renderer, summary: Summary): void {
   locations.forEach((loc, i) => {
     const rank = (summary.round + i) % unitCount
     const team = rank % 2
-    const position = gridVecs[loc]
+    const position = getPosition(loc, summary.qTurns)
     const color = renderer.teamColors[team]
     const dir = summary.directions[rank]
     const unitGroup = renderer.svg.group().transform({
@@ -99,12 +99,6 @@ function setupUnits (renderer: Renderer, summary: Summary): void {
     const pointerMask = bodyGroup.mask().add(square)
     const pointer = bodyGroup.rect(0.2, 0.15).center(0.4, 0).fill('black')
     pointerMask.add(pointer)
-    // const pointer2 = bodyGroup.rect(0.2, 0.15).center(-0.4, 0).fill('black')
-    // pointerMask.add(pointer2)
-    // const pointer3 = bodyGroup.rect(0.15, 0.2).center(0, 0.4).fill('black')
-    // pointerMask.add(pointer3)
-    // const pointer4 = bodyGroup.rect(0.15, 0.2).center(0, -0.4).fill('black')
-    // pointerMask.add(pointer4)
     circle.maskWith(pointerMask)
     const text = (rank + 1).toFixed(0)
     const path = renderer.font.getPath(text, 0, 0, 0.7)
@@ -122,7 +116,7 @@ function setupUnits (renderer: Renderer, summary: Summary): void {
 function setupGoals (renderer: Renderer, summary: Summary): void {
   renderer.goalGroups = []
   summary.goals.forEach(loc => {
-    const position = gridVecs[loc]
+    const position = getPosition(loc, summary.qTurns)
     const goalGroup = renderer.svg.group().transform({
       translateX: position.x,
       translateY: position.y

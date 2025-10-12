@@ -10,6 +10,7 @@ export class Summary {
   directions: number[]
   action: number
   level: number
+  qTurns: number
   countdown = teamInterval
   phase = 'team'
   full = false
@@ -24,6 +25,8 @@ export class Summary {
     this.action = this.directions[0]
     this.goals = [12, 13]
     this.round = 0
+    this.qTurns = sample(range(4))
+    console.log('new summary', this.qTurns)
   }
 }
 

@@ -1,5 +1,5 @@
 import { range, Vec2 } from '../math'
-import { choiceInterval, endInterval, gridVecs, maxRound, moveInterval, teamInterval, unitCount } from '../params'
+import { choiceInterval, endInterval, getPosition, maxRound, moveInterval, teamInterval, unitCount } from '../params'
 import { Client } from './client'
 import { SVG, G, Rect, Circle, Path } from '@svgdotjs/svg.js'
 import { getScores, Summary } from '../summary'
@@ -43,7 +43,6 @@ export class Renderer {
   }
 
   onTick (summary: Summary, team: number): void {
-    console.log('onTick')
     if (!this.setupComplete) setup(this, summary)
     this.updateGrid(summary)
     this.updateDirections(summary)
@@ -55,7 +54,7 @@ export class Renderer {
     if (summary.phase === 'choice') {
       range(unitCount).forEach(i => {
         const location = unitLocs[i]
-        const position = gridVecs[location]
+        const position = getPosition(location, summary.qTurns)
         const rank = (summary.round + i) % unitCount
         if (rank !== activeRank) return
         const highlight = this.highlights[position.x][position.y]
@@ -84,8 +83,8 @@ export class Renderer {
       const rank = (summary.round + i) % unitCount
       const bodyGroup = this.bodyGroups[rank]
       const dir = rank === activeRank
-        ? summary.action
-        : summary.directions[rank]
+        ? (summary.action + summary.qTurns) % 4
+        : (summary.directions[rank] + summary.qTurns) % 4
       bodyGroup.transform({
         translateX: 0,
         translateY: 0,
@@ -101,11 +100,10 @@ export class Renderer {
   }
 
   onMove (summary: Summary): void {
-    console.log('onMove')
     const unitLocs = stateToLocs(summary.state)
     range(unitCount).forEach(i => {
       const location = unitLocs[i]
-      const position = gridVecs[location]
+      const position = getPosition(location, summary.qTurns)
       const rank = (summary.round + i) % unitCount
       const unitGroup = this.unitGroups[rank]
       unitGroup.animate(800 * moveInterval).transform({
@@ -121,6 +119,7 @@ export class Renderer {
     this.clearHighlights()
     this.updateFullCircles(summary)
     this.updateFlags(summary)
+    this.updateGoals(summary)
     if (summary.phase === 'end') {
       mapColor = this.tieColor
       if (scores[0] === 2) mapColor = this.teamColors[0]
@@ -157,6 +156,16 @@ export class Renderer {
       levelLabel.transform({
         translateX: 0.5 * (box.x1 - box.x2),
         translateY: 0.5 * (box.y2 - box.y1)
+      })
+    })
+  }
+
+  updateGoals (summary: Summary): void {
+    summary.goals.forEach((loc, i) => {
+      const position = getPosition(loc, summary.qTurns)
+      this.goalGroups[i].transform({
+        translateX: position.x,
+        translateY: position.y
       })
     })
   }
