@@ -10,8 +10,8 @@ export function setup (renderer: Renderer, summary: Summary): void {
   setupEndLine(renderer)
   setupFullCircles(renderer)
   setupFlags(renderer)
-  setupUnits(renderer, summary)
   setupGoals(renderer, summary)
+  setupUnits(renderer, summary)
   setupLevelLabel(renderer, summary)
   renderer.setupComplete = true
 }
@@ -122,12 +122,12 @@ function setupGoals (renderer: Renderer, summary: Summary): void {
       translateY: position.y
     })
     renderer.goalGroups.push(goalGroup)
-    const circle = goalGroup.circle(0.7).center(0, 0)
-    circle.fill('none')
-    circle.stroke({
+    const rect = goalGroup.rect(0.9, 0.9).center(0, 0)
+    rect.fill('none')
+    rect.stroke({
       color: renderer.goalColor,
       width: 0.05,
-      opacity: 0.7
+      opacity: 1
     })
   })
 }

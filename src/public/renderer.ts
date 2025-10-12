@@ -28,7 +28,7 @@ export class Renderer {
   setupComplete = false
   borderColor = 'hsl(0, 0%, 15%)'
   highlightColor = 'hsl(0, 0%, 100%)'
-  goalColor = 'hsl(60, 100%, 50%)'
+  goalColor = 'hsl(60, 100%, 30%)'
   tieColor = 'hsl(0, 100%, 20%)'
   teamColors = [
     'hsl(120, 75%, 30%)',
@@ -130,7 +130,7 @@ export class Renderer {
       })
     }
     this.tiles.flat().forEach(tile => {
-      tile.stroke({ color: mapColor })
+      tile.stroke({ color: this.borderColor })
     })
     this.endLines.forEach(endLine => {
       endLine.stroke({ color: mapColor })
