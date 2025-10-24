@@ -4,7 +4,7 @@ export const gridSize = 5
 export const unitCount = 6
 export const tickInterval = 0.1
 export const moveInterval = 0.75
-export const choiceInterval = 3
+export const choiceInterval = 15
 export const endInterval = 6
 export const teamInterval = 2
 export const maxRound = 72
@@ -29,6 +29,7 @@ export const gridVecs: Vec2[] = range(gridSize).flatMap(x => {
 
 export const gridCount = gridVecs.length
 export const gridLocs = range(gridCount)
+export const goals = [12, 13]
 
 export const innerLocs = gridLocs.filter(loc => {
   const v = gridVecs[loc]

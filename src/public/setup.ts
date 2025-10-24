@@ -1,5 +1,5 @@
 import { range } from '../math'
-import { getPosition, gridSize, unitCount } from '../params'
+import { getPosition, goals, gridSize, unitCount } from '../params'
 import { stateToLocs } from '../state'
 import { Summary } from '../summary'
 import { Renderer } from './renderer'
@@ -115,7 +115,7 @@ function setupUnits (renderer: Renderer, summary: Summary): void {
 
 function setupGoals (renderer: Renderer, summary: Summary): void {
   renderer.goalGroups = []
-  summary.goals.forEach(loc => {
+  goals.forEach(loc => {
     const position = getPosition(loc, summary.qTurns)
     const goalGroup = renderer.svg.group().transform({
       translateX: position.x,

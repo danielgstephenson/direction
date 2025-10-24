@@ -1,12 +1,11 @@
 import { Game } from './game'
 import { range, sample } from './math'
-import { actionSpace, endInterval, maxRound, moveInterval, teamInterval, unitCount } from './params'
+import { actionSpace, endInterval, goals, maxRound, moveInterval, teamInterval, unitCount } from './params'
 import { getOutcome, stateToLocs } from './state'
 
 export class Summary {
   token: string
   state: number
-  goals: number[]
   directions: number[]
   action: number
   level: number
@@ -23,10 +22,8 @@ export class Summary {
     this.state = game.bot.getStartingState(level)
     this.directions = range(6).map(i => sample(actionSpace))
     this.action = this.directions[0]
-    this.goals = [12, 13]
     this.round = 0
     this.qTurns = sample(range(4))
-    console.log('new summary', this.qTurns)
   }
 }
 
@@ -56,7 +53,7 @@ export function getScores (summary: Summary): number[] {
   const scores = [0, 0]
   stateToLocs(summary.state).forEach((unitLoc, i) => {
     const team = (summary.round + i) % 2
-    summary.goals.forEach(goal => {
+    goals.forEach(goal => {
       if (goal === unitLoc) scores[team] += 1
     })
   })

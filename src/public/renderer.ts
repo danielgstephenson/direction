@@ -1,5 +1,5 @@
 import { range, Vec2 } from '../math'
-import { choiceInterval, endInterval, getPosition, maxRound, moveInterval, teamInterval, unitCount } from '../params'
+import { choiceInterval, endInterval, getPosition, goals, maxRound, moveInterval, teamInterval, unitCount } from '../params'
 import { Client } from './client'
 import { SVG, G, Rect, Circle, Path } from '@svgdotjs/svg.js'
 import { getScores, Summary } from '../summary'
@@ -161,7 +161,7 @@ export class Renderer {
   }
 
   updateGoals (summary: Summary): void {
-    summary.goals.forEach((loc, i) => {
+    goals.forEach((loc, i) => {
       const position = getPosition(loc, summary.qTurns)
       this.goalGroups[i].transform({
         translateX: position.x,
