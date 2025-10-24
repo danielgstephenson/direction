@@ -29,7 +29,7 @@ export class Renderer {
   borderColor = 'hsl(0, 0%, 15%)'
   highlightColor = 'hsl(0, 0%, 100%)'
   goalColor = 'hsl(60, 100%, 30%)'
-  tieColor = 'hsl(0, 100%, 20%)'
+  tieColor = 'hsl(0, 100%, 30%)'
   teamColors = [
     'hsl(120, 75%, 30%)',
     'hsl(210, 100%, 40%)'

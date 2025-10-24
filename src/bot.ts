@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs-extra'
 import { mean, sample } from './math'
 import { getOutcome, stateToLocs } from './state'
-import { actionSpace, gridVecs } from './params'
+import { actionSpace, goals, gridVecs } from './params'
 
 export class Bot {
   startingStates0: DataView
@@ -29,9 +29,13 @@ export class Bot {
     const locs = stateToLocs(state)
     const vecs = locs.map(loc => gridVecs[loc])
     const dist = vecs.map(vec => {
-      const dx = vec.x - 2
-      const dy = vec.y - 2
-      return Math.sqrt(dx * dx + dy * dy)
+      const goalDistances = goals.map(goalIndex => {
+        const goalVec = gridVecs[goalIndex]
+        const dx = vec.x - goalVec.x
+        const dy = vec.y - goalVec.y
+        return Math.sqrt(dx * dx + dy * dy)
+      })
+      return Math.min(...goalDistances)
     })
     const dist0 = [dist[0], dist[2], dist[4]]
     const dist1 = [dist[1], dist[3], dist[5]]
