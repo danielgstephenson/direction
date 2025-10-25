@@ -55,6 +55,13 @@ export class Game {
           }
         }
       })
+      socket.on('escape', (choice: number) => {
+        const playerCount = this.getPlayerCount()
+        const singlePlayer = playerCount === 1
+        if (singlePlayer && player.team >= 0) {
+          this.reset()
+        }
+      })
       socket.on('disconnect', () => {
         this.players = this.players.filter(p => p.id !== socket.id)
         console.log('disconnect:', socket.id, this.players.length)
@@ -63,8 +70,8 @@ export class Game {
   }
 
   start (): void {
-    const count0 = this.getPlayerCount(0)
-    const count1 = this.getPlayerCount(1)
+    const count0 = this.getTeamCount(0)
+    const count1 = this.getTeamCount(1)
     const maxCount = Math.max(count0, count1)
     if (maxCount > 1) {
       this.level = clamp(1, 30, this.level + 1)
@@ -142,22 +149,27 @@ export class Game {
   }
 
   getSmallTeam (): number {
-    const playerCount0 = this.getPlayerCount(0)
-    const playerCount1 = this.getPlayerCount(1)
-    if (playerCount1 > playerCount0) return 0
-    if (playerCount0 > playerCount1) return 1
+    const teamCount0 = this.getTeamCount(0)
+    const teamCount1 = this.getTeamCount(1)
+    if (teamCount1 > teamCount0) return 0
+    if (teamCount0 > teamCount1) return 1
     return sample([0, 1])
   }
 
-  getPlayerCount (team: number): number {
+  getTeamCount (team: number): number {
     const teamPlayers = this.players.filter(p => p.team === team)
     return teamPlayers.length
   }
 
+  getPlayerCount (): number {
+    const count0 = this.getTeamCount(0)
+    const count1 = this.getTeamCount(1)
+    return count0 + count1
+  }
+
   getActiveCount (): number {
-    const count0 = this.getPlayerCount(0)
-    const count1 = this.getPlayerCount(1)
-    const countBot = this.botActive ? 1 : 0
-    return count0 + count1 + countBot
+    const playerCount = this.getPlayerCount()
+    const botCount = this.botActive ? 1 : 0
+    return playerCount + botCount
   }
 }

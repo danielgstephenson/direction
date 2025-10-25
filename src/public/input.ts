@@ -22,6 +22,8 @@ export class Input {
     } else if (event.key === 'ArrowRight' || event.key === 'd') {
       this.client.socket.emit('choice', 0)
       this.client.socket.emit('selectTeam', 1)
+    } else if (event.key === 'Escape') {
+      this.client.socket.emit('escape')
     }
   }
 
