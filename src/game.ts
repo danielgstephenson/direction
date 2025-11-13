@@ -95,7 +95,6 @@ export class Game {
   }
 
   tick (): void {
-    console.log('tick', this.summary.phase, this.summary.countdown)
     this.players.forEach(player => {
       player.socket.emit('tick', this.summary, player.team)
     })
