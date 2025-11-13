@@ -42,15 +42,14 @@ export class Bot {
     return mean(dist0) - mean(dist1)
   }
 
-  getStartingState (level: number): number {
+  getStartingState (level: number, advantage: number): number {
     const sampleSize = 10000
     const startIndex = (level - 1) * sampleSize
     const index0 = startIndex + Math.floor(Math.random() * sampleSize)
     const index1 = startIndex + Math.floor(Math.random() * sampleSize)
     const state0 = this.startingStates0.getInt32(index0 * 4, true)
     const state1 = this.startingStates1.getInt32(index1 * 4, true)
-    const startingState = sample([state0, state1])
-    return startingState
+    return advantage === 0 ? state0 : state1
   }
 
   readInt32 (dataView: DataView, index: number): number {

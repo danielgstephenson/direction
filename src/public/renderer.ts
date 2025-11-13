@@ -59,10 +59,12 @@ export class Renderer {
         if (rank !== activeRank) return
         const highlight = this.highlights[position.x][position.y]
         highlight.front()
-        const alpha = activeTeam === this.team ? 0.7 : 0.3
+        const bright = activeTeam === this.team || (summary.round === 0 && !summary.versus)
+        const alpha = bright ? 0.7 : 0.3
         highlight.opacity(alpha)
         const a = 4 * summary.countdown / choiceInterval
         const b = 4 - a
+        if (a === 0) highlight.opacity(0)
         highlight.attr('stroke-dasharray', `${a} ${b}`)
       })
     } else if (['end', 'team'].includes(summary.phase)) {
@@ -140,8 +142,7 @@ export class Renderer {
       const perimeter = 4 * sideLength
       const b = perimeter * summary.round / maxRound
       const a = perimeter - b
-      const active = [0, 1].includes(this.team)
-      const color = active ? this.teamColors[this.team] : this.borderColor
+      const color = this.borderColor
       roundLine.stroke({
         dasharray: `${a} ${b}`,
         color
@@ -174,7 +175,8 @@ export class Renderer {
     this.flags.forEach((flag, team) => {
       const teamColor = this.teamColors[this.team]
       const color = team === this.team ? teamColor : 'black'
-      flag.opacity(1)
+      const opacity = summary.versus ? 1 : 0
+      flag.opacity(opacity)
       flag.fill(color)
     })
   }

@@ -13,14 +13,15 @@ export class Game {
   server = new Server()
   players: Player[] = []
   level = 5
-  summary = new Summary(this, this.level)
+  summary: Summary
   paused = true
-  botActive: boolean
+  versus: boolean
   timeScale: number
 
   constructor () {
     this.timeScale = this.server.config.timeScale
-    this.botActive = this.server.config.botActive
+    this.versus = this.server.config.versus
+    this.summary = new Summary(this, this.level)
     this.startIo()
     setInterval(() => this.tick(), tickInterval / this.timeScale * 1000)
   }
@@ -32,6 +33,10 @@ export class Game {
       socket.emit('connected', this.fontBuffer)
       console.log('connect:', socket.id, this.players.length)
       socket.on('choice', (choice: number) => {
+        if (!this.versus && this.getPlayerCount() === 0) {
+          player.team = 0
+          this.start()
+        }
         const choicePhase = this.summary.phase === 'choice'
         const activeTeam = this.summary.round % 2
         const activePlayer = player.team === activeTeam
@@ -49,9 +54,6 @@ export class Game {
           if (this.getActiveCount() > 1) {
             this.summary.full = true
             this.paused = false
-            if (this.botActive) {
-              this.summary.countdown = 0
-            }
           }
         }
       })
@@ -78,7 +80,11 @@ export class Game {
       this.reset()
       return
     }
+    if (this.versus) {
+      this.level = clamp(1, 30, this.level - 1)
+    }
     this.summary.full = true
+    this.paused = false
     const empty0 = count0 === 0
     const empty1 = count1 === 0
     if (empty0) this.summary.botTeam = 0
@@ -89,11 +95,15 @@ export class Game {
   }
 
   tick (): void {
+    console.log('tick', this.summary.phase, this.summary.countdown)
     this.players.forEach(player => {
       player.socket.emit('tick', this.summary, player.team)
     })
     if (this.paused) return
-    this.summary.countdown = Math.max(0, this.summary.countdown - tickInterval)
+    const choicePhase = this.summary.phase === 'choice'
+    if (this.versus || !choicePhase) {
+      this.summary.countdown = Math.max(0, this.summary.countdown - tickInterval)
+    }
     if (this.summary.countdown === 0) this.step()
   }
 
@@ -169,7 +179,7 @@ export class Game {
 
   getActiveCount (): number {
     const playerCount = this.getPlayerCount()
-    const botCount = this.botActive ? 1 : 0
+    const botCount = this.versus ? 0 : 1
     return playerCount + botCount
   }
 }

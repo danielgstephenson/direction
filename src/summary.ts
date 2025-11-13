@@ -1,6 +1,6 @@
 import { Game } from './game'
 import { range, sample } from './math'
-import { actionSpace, endInterval, goals, maxRound, moveInterval, teamInterval, unitCount } from './params'
+import { actionSpace, choiceInterval, endInterval, goals, maxRound, moveInterval, teamInterval, unitCount } from './params'
 import { getOutcome, stateToLocs } from './state'
 
 export class Summary {
@@ -10,16 +10,21 @@ export class Summary {
   action: number
   level: number
   qTurns: number
-  countdown = teamInterval
-  phase = 'team'
+  phase: string
+  countdown: number
   full = false
+  versus = false
   botTeam = -1
   round = 0
 
   constructor (game: Game, level: number) {
     this.level = level
     this.token = game.token
-    this.state = game.bot.getStartingState(level)
+    this.versus = game.versus
+    this.phase = game.versus ? 'team' : 'choice'
+    this.countdown = game.versus ? teamInterval : choiceInterval
+    const advantage = this.versus ? sample([0, 1]) : 0
+    this.state = game.bot.getStartingState(level, advantage)
     this.directions = range(6).map(i => sample(actionSpace))
     this.action = this.directions[0]
     this.round = 0
