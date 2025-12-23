@@ -6,6 +6,7 @@ import { getOutcome, stateToLocs } from './state'
 export class Summary {
   token: string
   state: number
+  history: number[] = []
   directions: number[]
   action: number
   level: number
@@ -35,10 +36,27 @@ export class Summary {
 export function advance (summary: Summary): void {
   const oldRank = summary.round % unitCount
   summary.directions[oldRank] = summary.action
+  summary.history.push(summary.state)
   summary.state = getOutcome(summary.state, summary.action)
   summary.round += 1
   summary.phase = 'move'
   summary.countdown = moveInterval
+  const newRank = summary.round % unitCount
+  summary.action = summary.directions[newRank]
+  checkEnd(summary)
+}
+
+export function undo (summary: Summary): void {
+  if (summary.history.length < 2) return
+  if (summary.round < 2) return
+  if (summary.phase !== 'choice') return
+  summary.history.pop()
+  const oldState = summary.history.pop()
+  if (oldState == null) return
+  summary.state = oldState
+  summary.round = summary.round - 2
+  summary.phase = 'choice'
+  summary.countdown = choiceInterval
   const newRank = summary.round % unitCount
   summary.action = summary.directions[newRank]
   checkEnd(summary)

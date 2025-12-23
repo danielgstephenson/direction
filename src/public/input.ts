@@ -22,14 +22,15 @@ export class Input {
     } else if (event.key === 'ArrowRight' || event.key === 'd') {
       this.client.socket.emit('choice', 0)
       this.client.socket.emit('selectTeam', 1)
-    } else if (event.key === 'Escape') {
-      this.client.socket.emit('escape')
+    } else if (event.key === 'z') {
+      this.client.socket.emit('undo')
     }
   }
 
   onmousedown (event: MouseEvent): void {
     const focus = this.client.renderer?.focus
     if (focus == null) return
+    if (event.button !== 0) return
     const x = event.clientX - focus.x
     const y = focus.y - event.clientY
     let dir = 0

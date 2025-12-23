@@ -22,8 +22,10 @@ export class Renderer {
   fullCircles: Circle[] = []
   flags: Rect[] = []
   levelLabels: Path[] = []
+  pointers: Rect[] = []
   padding = 1.25
   team: number = 0
+  round = 0
   focus: Vec2 = { x: 0, y: 0 }
   setupComplete = false
   borderColor = 'hsl(0, 0%, 15%)'
@@ -56,7 +58,10 @@ export class Renderer {
         const location = unitLocs[i]
         const position = getPosition(location, summary.qTurns)
         const rank = (summary.round + i) % unitCount
+        const pointer = this.pointers[rank]
+        pointer.opacity(0)
         if (rank !== activeRank) return
+        pointer.opacity(1)
         const highlight = this.highlights[position.x][position.y]
         highlight.front()
         const bright = activeTeam === this.team || (summary.round === 0 && !summary.versus)
@@ -108,11 +113,19 @@ export class Renderer {
       const position = getPosition(location, summary.qTurns)
       const rank = (summary.round + i) % unitCount
       const unitGroup = this.unitGroups[rank]
-      unitGroup.animate(800 * moveInterval).transform({
-        translateX: position.x,
-        translateY: position.y
-      })
+      if (this.round <= summary.round) {
+        unitGroup.animate(800 * moveInterval).transform({
+          translateX: position.x,
+          translateY: position.y
+        })
+      } else {
+        unitGroup.transform({
+          translateX: position.x,
+          translateY: position.y
+        })
+      }
     })
+    this.round = summary.round
   }
 
   updateGrid (summary: Summary): void {
@@ -182,7 +195,7 @@ export class Renderer {
   }
 
   updateFullCircles (summary: Summary): void {
-    const opacity = summary.full ? 1 : 0
+    const opacity = 0 // summary.full ? 1 : 0
     this.fullCircles.forEach(circle => {
       let color = this.borderColor
       if ([0, 1].includes(summary.botTeam)) {

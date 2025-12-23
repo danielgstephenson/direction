@@ -2,7 +2,7 @@ import { choiceInterval, tickInterval } from './params'
 import { Player } from './player'
 import { Server } from './server'
 import { clamp, sample } from './math'
-import { advance, getScores, Summary } from './summary'
+import { advance, getScores, Summary, undo } from './summary'
 import { Bot } from './bot'
 import { readFileSync } from 'fs'
 
@@ -57,11 +57,16 @@ export class Game {
           }
         }
       })
-      socket.on('escape', (choice: number) => {
+      socket.on('undo', (choice: number) => {
         const playerCount = this.getPlayerCount()
         const singlePlayer = playerCount === 1
-        if (singlePlayer && player.team >= 0) {
-          this.reset()
+        const activeTeam = this.summary.round % 2
+        const activePlayer = player.team === activeTeam
+        if (singlePlayer && activePlayer) {
+          undo(this.summary)
+          this.players.forEach(player => {
+            player.socket.emit('move', this.summary)
+          })
         }
       })
       socket.on('disconnect', () => {
