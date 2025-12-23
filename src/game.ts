@@ -43,12 +43,10 @@ export class Game {
         }
       })
       socket.on('selectTeam', (team: number) => {
-        console.log('selectTeam', team)
         const opening = this.getActiveCount() < 2
         const teamPhase = this.summary.phase === 'team'
         if (opening && teamPhase) {
           player.team = team
-          console.log('player.team', player.team)
           if (this.getActiveCount() > 1) {
             this.summary.full = true
             this.paused = false
