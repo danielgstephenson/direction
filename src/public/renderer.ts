@@ -46,6 +46,7 @@ export class Renderer {
 
   onTick (summary: Summary, team: number): void {
     if (!this.setupComplete) setup(this, summary)
+    // console.log('phase', summary.phase)
     this.updateGrid(summary)
     this.updateDirections(summary)
     this.team = team
@@ -188,7 +189,7 @@ export class Renderer {
     this.flags.forEach((flag, team) => {
       const teamColor = this.teamColors[this.team]
       const color = team === this.team ? teamColor : 'black'
-      const opacity = summary.versus ? 1 : 0
+      const opacity = 1 // summary.versus ? 1 : 0
       flag.opacity(opacity)
       flag.fill(color)
     })

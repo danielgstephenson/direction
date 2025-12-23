@@ -22,9 +22,9 @@ export class Summary {
     this.level = level
     this.token = game.token
     this.versus = game.versus
-    this.phase = game.versus ? 'team' : 'choice'
+    this.phase = 'team'
     this.countdown = game.versus ? teamInterval : choiceInterval
-    const advantage = this.versus ? sample([0, 1]) : 0
+    const advantage = sample([0, 1])
     this.state = game.bot.getStartingState(level, advantage)
     this.directions = range(6).map(i => sample(actionSpace))
     this.action = this.directions[0]
@@ -49,7 +49,7 @@ export function advance (summary: Summary): void {
 export function undo (summary: Summary): void {
   if (summary.history.length < 2) return
   if (summary.round < 2) return
-  if (summary.phase !== 'choice') return
+  if (!['end', 'choice'].includes(summary.phase)) return
   summary.history.pop()
   const oldState = summary.history.pop()
   if (oldState == null) return

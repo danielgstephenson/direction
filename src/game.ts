@@ -33,10 +33,6 @@ export class Game {
       socket.emit('connected', this.fontBuffer)
       console.log('connect:', socket.id, this.players.length)
       socket.on('choice', (choice: number) => {
-        if (!this.versus && this.getPlayerCount() === 0) {
-          player.team = 0
-          this.start()
-        }
         const choicePhase = this.summary.phase === 'choice'
         const activeTeam = this.summary.round % 2
         const activePlayer = player.team === activeTeam
@@ -47,13 +43,18 @@ export class Game {
         }
       })
       socket.on('selectTeam', (team: number) => {
+        console.log('selectTeam', team)
         const opening = this.getActiveCount() < 2
         const teamPhase = this.summary.phase === 'team'
         if (opening && teamPhase) {
           player.team = team
+          console.log('player.team', player.team)
           if (this.getActiveCount() > 1) {
             this.summary.full = true
             this.paused = false
+          }
+          if (!this.versus) {
+            this.start()
           }
         }
       })
@@ -63,6 +64,14 @@ export class Game {
         const activeTeam = this.summary.round % 2
         const activePlayer = player.team === activeTeam
         if (singlePlayer && activePlayer) {
+          if (this.summary.history.length < 2) {
+            this.summary.history = []
+            this.summary.phase = 'team'
+            this.players.forEach(player => {
+              player.team = -1
+            })
+            return
+          }
           undo(this.summary)
           this.players.forEach(player => {
             player.socket.emit('move', this.summary)
