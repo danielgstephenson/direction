@@ -98,6 +98,7 @@ function setupUnits (renderer: Renderer, summary: Summary): void {
     const square = bodyGroup.rect(1, 1).center(0, 0).fill('white')
     const pointerMask = bodyGroup.mask().add(square)
     const pointer = bodyGroup.rect(0.2, 0.15).center(0.4, 0).fill('black')
+    pointer.opacity(0)
     renderer.pointers[rank] = pointer
     pointerMask.add(pointer)
     circle.maskWith(pointerMask)
