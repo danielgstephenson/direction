@@ -62,15 +62,12 @@ export class Game {
         const activeTeam = this.summary.round % 2
         const activePlayer = player.team === activeTeam
         if (singlePlayer && activePlayer) {
-          if (this.summary.history.length < 2) {
-            this.summary.history = []
-            this.summary.phase = 'team'
+          undo(this.summary)
+          if (this.summary.phase === 'team') {
             this.players.forEach(player => {
               player.team = -1
             })
-            return
           }
-          undo(this.summary)
           this.players.forEach(player => {
             player.socket.emit('move', this.summary)
           })

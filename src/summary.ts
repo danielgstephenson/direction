@@ -31,14 +31,15 @@ export class Summary {
     this.action = this.directions[0]
     this.round = 0
     this.qTurns = sample(range(4))
+    this.history.push(this.state)
   }
 }
 
 export function advance (summary: Summary): void {
   const oldRank = summary.round % unitCount
   summary.directions[oldRank] = summary.action
-  summary.history.push(summary.state)
   summary.state = getOutcome(summary.state, summary.action)
+  summary.history.push(summary.state)
   summary.round += 1
   summary.phase = 'move'
   summary.countdown = moveInterval
@@ -48,19 +49,26 @@ export function advance (summary: Summary): void {
 }
 
 export function undo (summary: Summary): void {
-  if (summary.history.length < 2) return
-  if (summary.round < 2) return
   if (!['end', 'choice'].includes(summary.phase)) return
-  summary.history.pop()
-  const oldState = summary.history.pop()
-  if (oldState == null) return
-  summary.state = oldState
-  summary.round = summary.round - 2
-  summary.phase = 'choice'
-  summary.countdown = choiceInterval
-  const newRank = summary.round % unitCount
-  summary.action = summary.directions[newRank]
-  checkEnd(summary)
+  if (summary.history.length < 3) {
+    summary.state = summary.history[0]
+    summary.history = [summary.history[0]]
+    summary.round = 0
+    summary.phase = 'team'
+    summary.action = summary.directions[0]
+  } else {
+    summary.history.pop()
+    summary.history.pop()
+    const oldState = summary.history[summary.history.length - 1]
+    if (oldState == null) return
+    summary.state = oldState
+    summary.round = summary.round - 2
+    summary.phase = 'choice'
+    summary.countdown = choiceInterval
+    const newRank = summary.round % unitCount
+    summary.action = summary.directions[newRank]
+    checkEnd(summary)
+  }
 }
 
 export function checkEnd (summary: Summary): void {

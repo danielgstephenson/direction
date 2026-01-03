@@ -48,35 +48,15 @@ export class Renderer {
 
   onTick (summary: Summary, team: number): void {
     if (!this.setupComplete) setup(this, summary)
-    // console.log('phase', summary.phase)
     this.updateGrid(summary)
     this.updateDirections(summary)
     this.updateTeamArrows(summary)
+    this.updatePointers(summary)
+    this.updateHighlights(summary)
     this.team = team
     const activeRank = summary.round % unitCount
     this.updateFocus(activeRank)
-    const activeTeam = activeRank % 2
-    const unitLocs = stateToLocs(summary.state)
-    if (summary.phase === 'choice') {
-      range(unitCount).forEach(i => {
-        const location = unitLocs[i]
-        const position = getPosition(location, summary.qTurns)
-        const rank = (summary.round + i) % unitCount
-        const pointer = this.pointers[rank]
-        pointer.opacity(0)
-        if (rank !== activeRank) return
-        pointer.opacity(1)
-        const highlight = this.highlights[position.x][position.y]
-        highlight.front()
-        const bright = activeTeam === this.team || (summary.round === 0 && !summary.versus)
-        const alpha = bright ? 0.7 : 0.3
-        highlight.opacity(alpha)
-        const a = 4 * summary.countdown / choiceInterval
-        const b = 4 - a
-        if (a === 0) highlight.opacity(0)
-        highlight.attr('stroke-dasharray', `${a} ${b}`)
-      })
-    } else if (['end', 'team'].includes(summary.phase)) {
+    if (['end', 'team'].includes(summary.phase)) {
       const interval = summary.phase === 'end' ? endInterval : teamInterval
       this.endLines.forEach(endLine => {
         const sideLength = endLine.bbox().width
@@ -86,6 +66,29 @@ export class Renderer {
         endLine.attr('stroke-dasharray', `${a} ${b}`)
       })
     }
+  }
+
+  updateHighlights (summary: Summary): void {
+    this.clearHighlights()
+    const unitLocs = stateToLocs(summary.state)
+    const activeTeam = summary.round % 2
+    range(unitCount).forEach(i => {
+      const location = unitLocs[i]
+      const position = getPosition(location, summary.qTurns)
+      const highlight = this.highlights[position.x][position.y]
+      if (i !== 0 || summary.phase !== 'choice') {
+        highlight.opacity(0)
+        return
+      }
+      highlight.front()
+      const bright = activeTeam === this.team
+      const alpha = bright ? 0.7 : 0.3
+      highlight.opacity(alpha)
+      const a = 4 * summary.countdown / choiceInterval
+      const b = 4 - a
+      if (a === 0) highlight.opacity(0)
+      highlight.attr('stroke-dasharray', `${a} ${b}`)
+    })
   }
 
   updateTeamArrows (summary: Summary): void {
@@ -111,6 +114,17 @@ export class Renderer {
         translateY: 0,
         rotate: 90 * dir
       })
+    })
+  }
+
+  updatePointers (summary: Summary): void {
+    const activeRank = summary.round % unitCount
+    range(unitCount).forEach(i => {
+      const rank = (summary.round + i) % unitCount
+      const pointer = this.pointers[rank]
+      pointer.opacity(0)
+      if (rank !== activeRank) return
+      pointer.opacity(1)
     })
   }
 
@@ -145,7 +159,6 @@ export class Renderer {
   updateGrid (summary: Summary): void {
     const scores = getScores(summary)
     let mapColor = this.borderColor
-    this.clearHighlights()
     this.updateFullCircles(summary)
     this.updateFlags(summary)
     this.updateGoals(summary)
