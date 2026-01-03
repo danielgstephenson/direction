@@ -76,6 +76,9 @@ export class Game {
       socket.on('disconnect', () => {
         this.players = this.players.filter(p => p.id !== socket.id)
         console.log('disconnect:', socket.id, this.players.length)
+        if (this.players.length === 0) {
+          this.reset()
+        }
       })
     })
   }
