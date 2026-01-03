@@ -17,6 +17,7 @@ export class Summary {
   versus = false
   botTeam = -1
   round = 0
+  tick = 0
 
   constructor (game: Game, level: number) {
     this.level = level

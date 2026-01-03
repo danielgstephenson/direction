@@ -12,16 +12,18 @@ export class Renderer {
   svgDiv = document.getElementById('svgDiv') as HTMLDivElement
   client: Client
   svg = SVG().addTo('#svgDiv')
-  roundLines: Rect[] = []
   endLines: Rect[] = []
   tiles: Rect[][] = []
   highlights: Rect[][] = []
   bodyGroups: G[] = []
   unitGroups: G[] = []
   goalGroups: G[] = []
+  goalRects: Rect[] = []
   fullCircles: Circle[] = []
   flags: Rect[] = []
   levelLabels: Path[] = []
+  guideLabels: Path[] = []
+  teamArrows: Path[] = []
   pointers: Rect[] = []
   padding = 1.25
   team: number = 0
@@ -49,6 +51,7 @@ export class Renderer {
     // console.log('phase', summary.phase)
     this.updateGrid(summary)
     this.updateDirections(summary)
+    this.updateTeamArrows(summary)
     this.team = team
     const activeRank = summary.round % unitCount
     this.updateFocus(activeRank)
@@ -83,6 +86,16 @@ export class Renderer {
         endLine.attr('stroke-dasharray', `${a} ${b}`)
       })
     }
+  }
+
+  updateTeamArrows (summary: Summary): void {
+    if (summary.phase !== 'team') {
+      this.teamArrows.forEach(arrow => { arrow.opacity(0) })
+      return
+    }
+    this.teamArrows.forEach(arrow => {
+      arrow.opacity(0.5 + 0.5 * Math.sin(0.5 * summary.tick))
+    })
   }
 
   updateDirections (summary: Summary): void {
@@ -151,26 +164,15 @@ export class Renderer {
     this.endLines.forEach(endLine => {
       endLine.stroke({ color: mapColor })
     })
-    this.roundLines.forEach(roundLine => {
-      const sideLength = roundLine.bbox().width
-      const perimeter = 4 * sideLength
-      const b = perimeter * summary.round / maxRound
-      const a = perimeter - b
-      const color = this.borderColor
-      roundLine.stroke({
-        dasharray: `${a} ${b}`,
-        color
-      })
-    })
-    this.levelLabels.forEach(levelLabel => {
-      const text = summary.level.toFixed(0)
+    this.levelLabels.forEach((levelLabel, i) => {
+      const text = `Level ${summary.level.toFixed(0)}`
       const path = this.font.getPath(text, 0, 0, 0.5)
       levelLabel.attr({ d: path.toPathData(4) })
       levelLabel.fill('hsl(0,0%,50%)')
       const box = path.getBoundingBox()
       levelLabel.transform({
-        translateX: 0.5 * (box.x1 - box.x2),
-        translateY: 0.5 * (box.y2 - box.y1)
+        translateX: +0.5 * (box.x1 - box.x2),
+        translateY: +0.5 * (box.y2 - box.y1)
       })
     })
   }
@@ -182,6 +184,13 @@ export class Renderer {
         translateX: position.x,
         translateY: position.y
       })
+    })
+    this.goalRects.forEach(goalRect => {
+      const sideLength = goalRect.bbox().width
+      const perimeter = 4 * sideLength
+      const b = perimeter * (summary.round - 1) / maxRound
+      const a = perimeter - b
+      goalRect.attr('stroke-dasharray', `${a} ${b}`)
     })
   }
 

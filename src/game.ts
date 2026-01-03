@@ -107,6 +107,7 @@ export class Game {
   }
 
   tick (): void {
+    this.summary.tick += 1
     this.players.forEach(player => {
       player.socket.emit('tick', this.summary, player.team)
     })

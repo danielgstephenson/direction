@@ -6,13 +6,13 @@ import { Renderer } from './renderer'
 
 export function setup (renderer: Renderer, summary: Summary): void {
   setupGrids(renderer)
-  setupRoundLine(renderer)
   setupEndLine(renderer)
   setupFullCircles(renderer)
   setupFlags(renderer)
   setupGoals(renderer, summary)
   setupUnits(renderer, summary)
   setupLevelLabel(renderer, summary)
+  setupTeamArrows(renderer, summary)
   renderer.setupComplete = true
 }
 
@@ -43,22 +43,6 @@ function setupGrids (renderer: Renderer): void {
       renderer.tiles[x][y] = tile
     })
   })
-}
-
-function setupRoundLine (renderer: Renderer): void {
-  const gap = 0.5
-  const width = gridSize + gap
-  const height = gridSize + gap
-  const center = 0.5 * (gridSize - 1)
-  const roundLine = renderer.svg.rect(width, height)
-  roundLine.fill({ opacity: 0 })
-  roundLine.stroke({
-    color: renderer.borderColor,
-    width: 0.05,
-    linecap: 'square'
-  })
-  roundLine.center(center, center)
-  renderer.roundLines[0] = roundLine
 }
 
 function setupEndLine (renderer: Renderer): void {
@@ -98,7 +82,7 @@ function setupUnits (renderer: Renderer, summary: Summary): void {
     const square = bodyGroup.rect(1, 1).center(0, 0).fill('white')
     const pointerMask = bodyGroup.mask().add(square)
     const pointer = bodyGroup.rect(0.2, 0.15).center(0.4, 0).fill('black')
-    pointer.opacity(0)
+    if (i !== 0) pointer.opacity(0)
     renderer.pointers[rank] = pointer
     pointerMask.add(pointer)
     circle.maskWith(pointerMask)
@@ -125,12 +109,16 @@ function setupGoals (renderer: Renderer, summary: Summary): void {
     })
     renderer.goalGroups.push(goalGroup)
     const rect = goalGroup.rect(0.9, 0.9).center(0, 0)
-    rect.fill('none')
+    rect.fill({
+      color: renderer.goalColor,
+      opacity: 0.2
+    })
     rect.stroke({
       color: renderer.goalColor,
       width: 0.05,
       opacity: 1
     })
+    renderer.goalRects.push(rect)
   })
 }
 
@@ -156,8 +144,8 @@ function setupFullCircles (renderer: Renderer): void {
 
 function setupFlags (renderer: Renderer): void {
   const points = [
-    [1, 5.2],
-    [3, 5.2]
+    [0.5, 5],
+    [3.5, 5]
   ]
   points.forEach((point, team) => {
     const x = point[0]
@@ -177,18 +165,33 @@ function setupFlags (renderer: Renderer): void {
 
 function setupLevelLabel (renderer: Renderer, summary: Summary): void {
   const group = renderer.svg.group()
-  const levelLabel = group.path()
-  group.translate(2, 5.4)
+  group.translate(2, 5.01)
   group.flip('y')
-  renderer.levelLabels[0] = levelLabel
+  const levelLabel = group.path()
+  renderer.levelLabels.push(levelLabel)
+}
 
-  // const text = '1'
-  // const path = renderer.font.getPath(text, 0, 0, 0.5)
-  // const levelLabel = renderer.svg.path(path.toPathData(4))
-  // levelLabel.fill('hsl(0,0%,50%)')
-  // levelLabel.flip('y')
-  // const box = path.getBoundingBox()
-  // levelLabel.attr({ d: path.toPathData(4) })
-  // levelLabel.center(2, box.y1 - box.y2 - 5.4)
-  // renderer.levelLabels[0] = levelLabel
+function setupTeamArrows (renderer: Renderer, summary: Summary): void {
+  const marker = renderer.svg.defs().marker(3, 3)
+  marker.attr({
+    id: 'arrowHead',
+    viewBox: '0 0 10 10',
+    refX: 5,
+    refY: 5,
+    orient: 'auto'
+  })
+  marker.path('M 0 0 L 10 5 L 0 10 z')
+  marker.fill(renderer.highlightColor)
+  range(2).forEach(i => {
+    const x0 = 4 * Math.sign(i)
+    const x1 = x0 + Math.sign(i - 0.5) * 0.5
+    const arrow = renderer.svg.path(`M ${x0},5 L ${x1},5`)
+    arrow.fill('none')
+    arrow.stroke({
+      width: 0.1,
+      color: renderer.highlightColor
+    })
+    arrow.marker('end', marker)
+    renderer.teamArrows[i] = arrow
+  })
 }
