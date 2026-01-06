@@ -164,7 +164,8 @@ export class Game {
       const playerScore = scores[playerTeam]
       if (playerScore > botScore) {
         this.level = clamp(1, 30, this.level + 1)
-      } else {
+      }
+      if (playerScore < botScore) {
         this.level = clamp(1, 30, this.level - 1)
       }
     }
